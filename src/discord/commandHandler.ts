@@ -1,6 +1,5 @@
 import { Message, MessageEmbed } from "discord.js";
 import mysql from "mysql2/promise";
-import config from "../config.json";
 import {promisify} from "util";
 import _glob from "glob";
 import * as path from "path";
@@ -14,15 +13,16 @@ interface CommandNameList {
 
 export default class CommandHandler {
 
-	connection:mysql.Connection;
+	pool:mysql.Pool;
 	files:string[];
 	CommandList:CommandList;
 
+	initPool(pool:mysql.Pool) {
+		this.pool = pool;
+		return this;
+	}
+
 	async init() {
-		const { host, user, password, database } = config.mysql;
-		// create the connection
-		this.connection = await mysql.createConnection({host, user, password});
-		this.connection.query(`USE ${database}`);
 
 		this.CommandList = {};
 
@@ -73,11 +73,11 @@ export default class CommandHandler {
 		if (message.channel.type === "dm") {
 			prefix = "!rem";
 		} else {
-			let [pre] = await this.connection.execute("SELECT prefix FROM servers WHERE serverid = ?", [message.guild.id]);
+			let [pre] = await this.pool.execute("SELECT prefix FROM servers WHERE serverid = ?", [message.guild.id]);
 			prefix = pre?.[0]?.prefix;
 	
 			if (prefix === undefined) {
-				await this.connection.execute("INSERT INTO servers (serverid, prefix) VALUES (?,?)", [message.guild.id, "!rem"]);
+				await this.pool.execute("INSERT INTO servers (serverid, prefix) VALUES (?,?)", [message.guild.id, "!rem"]);
 				prefix = "!rem";
 			}
 		}
@@ -102,7 +102,7 @@ export default class CommandHandler {
 
 	async execute(command:string, args:string, msg:Message) {
 		if (this.CommandList.hasOwnProperty(command)) {
-			let cmd = new this.CommandList[command].command()
+			let cmd = new this.CommandList[command].command(this.pool)
 			cmd.init(msg).run(args).catch(async (err) => {
 				console.log(err);
 				let embed = this.initEmbed(msg)

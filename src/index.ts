@@ -2,21 +2,53 @@ import * as config from "./config.json";
 import { Client } from "discord.js";
 import CommandHandler from "./discord/commandHandler";
 //import ReactionHandler from "./discord/reactionHandler";
+import mysql from "mysql2/promise"
 
 //initialize hanzi package for chinese commands
 import hanzi from "hanzi";
+import CacheService from "./database/cacheService";
+import { exit } from "process";
 hanzi.start();
 
 const client = new Client();
 const command = new CommandHandler();
 
-client.on("ready", async() => {
-	console.log(`Logged in as ${client.user.tag}!`);
-	await command.init();
+const pool = mysql.createPool({
+  host: config.mysql.host,
+  user: config.mysql.user,
+	password: config.mysql.password,
+  database: config.mysql.database,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-client.on("message", (msg) => {
+let cacheService:CacheService;
+
+client.on("ready", async() => {
+	console.log(`Logged in as ${client.user.tag}!`);
+	console.log(Number(new Date()));
+	await command.initPool(pool).init();
+	cacheService = new CacheService(pool);
+	cacheService.startPeriodicCache(100000);
+	console.log(client.guilds.cache.size + " servers");
+});
+
+client.on("message", async(msg) => {
+
 	command.handle(msg);
+
+	if (msg.content === "shut down rem" && msg.author.id === "196249128286552064") {
+		await msg.reply("Rude, but ok. Bye!");
+		client.destroy();
+		cacheService.stopPeriodicCache();
+
+		setTimeout(() => {
+			exit();
+		}, 30000);
+
+	}
+	
 });
 
 /*client.on("messageReactionAdd", async (reaction, user) => {

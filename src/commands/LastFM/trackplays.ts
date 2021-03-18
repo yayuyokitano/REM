@@ -2,7 +2,7 @@ import LastFMCommand from "../../helpers/lastfmCommand";
 
 export default class TrackPlays extends LastFMCommand {
 
-	category = "LastFM";
+	category = "Last.FM";
 	description = "Gets track playcount from Last.FM";
 	usage = ["", "KITANO REM - RAINSICK"];
 	alias = ["tp"];
@@ -10,7 +10,7 @@ export default class TrackPlays extends LastFMCommand {
 	async run(args:string) {
 
 		let lastfmSession = await this.getRelevantLFM();
-		let track = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
+		let {track} = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
 
 		if (typeof lastfmSession === "undefined") {
 			throw `User is not logged in to last.fm. You can login using \`${await this.getPrefix()}login\``

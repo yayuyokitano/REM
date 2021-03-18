@@ -1,7 +1,7 @@
 import LastFMCommand from "../../helpers/lastfmCommand";
 
 export default class Test extends LastFMCommand {
-	category = "Secret";
+	category = "Secret Commands";
 	description = "Yeet";
 	usage = [""];
 
@@ -11,8 +11,7 @@ export default class Test extends LastFMCommand {
 			throw "No.";
 		}
 
-		console.log(this.message.guild.members.cache.keyArray());
-		console.log(this.message.guild.members.cache.keyArray());
+		this.reply(this.getLocalizedTime(new Date(), await this.getTimezone()));
 
 	}
 }

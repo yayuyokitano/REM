@@ -3,7 +3,7 @@ import LastFMCommand from "../../helpers/lastfmCommand";
 
 export default class Scrobbles extends LastFMCommand {
 
-	category = "LastFM";
+	category = "Last.FM";
 	description = "Gets your scrobble count from Last.FM";
 	usage = ["", "@mention", "1m", "lfm:Mexdeep 1m2w", "1 month and 2 weeks"];
 	alias = ["s"];

@@ -11,13 +11,9 @@ export default class ArtistTopAlbums extends LastFMCommand {
 		const lastfmSessions = (await this.getRelevantLFM()).session;
 		const user = this.lastfm.user.getInfo(lastfmSessions[0]);
     const artist = await this.getRelevantArtist(args);
-    const connection = await this.initDB();
-    let [albums] = await connection
-      .execute(`SELECT album, COUNT(*) AS \`scrobbleCount\` FROM scrobbles WHERE artist = ? AND lastfmsession = ? GROUP BY album ORDER BY \`scrobbleCount\` DESC`, [artist, lastfmSessions[0]])
+    let [albums] = await this.pool
+      .execute(`SELECT album, COUNT(*) AS \`scrobbleCount\` FROM scrobbles WHERE artist = ? AND lastfmsession = ? AND album <> "" GROUP BY album ORDER BY \`scrobbleCount\` DESC`, [artist, lastfmSessions[0]])
       .catch((err) => { throw "Database error. Did you log in to Last.FM?"; });
-    await connection.end();
-
-		console.log(albums);
 
     if ((albums as any[]).length === 0) {
       this.reply("you haven't scrobbled any albums from this artist!");

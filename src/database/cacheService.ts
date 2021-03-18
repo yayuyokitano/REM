@@ -7,21 +7,40 @@ import { getRecentTracks } from "lastfm-typed/dist/interfaces/userInterface";
 export default class CacheService {
 
 	user:any;
+	interval:NodeJS.Timeout;
+	pool:mysql.Pool;
 
-	async initDB() {
-		const { host, user, password, database } = config.mysql;
-		const connection = await mysql.createConnection({host, user, password});
-		await connection.query(`USE ${database}`);
-		return connection;
+	constructor(pool:mysql.Pool) {
+		this.pool = pool;
 	}
 
-	async addScrobbles(connection:mysql.Connection, data:getRecentTracks) {
+	async startPeriodicCache(intervalTime:number) {
+
+		this.interval = setInterval(async () => {
+
+			const relevantUser = (await this.pool.query("SELECT discordid, lastcachetime FROM users WHERE lastcachetime > -1 ORDER BY lastcachetime LIMIT 1").catch((err) => {
+				console.error("No cacheable users for routine caching. You broke it.");
+			}))[0][0];
+
+			this.cacheIndividual(relevantUser.discordid).catch(err => {
+				console.error(`Routine caching failed for discord id ${relevantUser.discordid}. Reason:\n` + JSON.stringify(err));
+			});
+
+		}, intervalTime);
+
+	}
+
+	async stopPeriodicCache() {
+		clearInterval(this.interval);
+	}
+
+	async addScrobbles(data:getRecentTracks) {
 
 		let tracks = data.tracks.map(e => {
 			return [this.user.lastfmsession ,e.artist.name, e.album.name, e.name, e.date.uts];
 		})
 
-		connection.execute(`INSERT INTO scrobbles (lastfmsession, artist, album, track, timestamp) VALUES (?,?,?,?,?)${",(?,?,?,?,?)".repeat(tracks.length - 1)}`, tracks.flat());
+		this.pool.execute(`INSERT INTO scrobbles (lastfmsession, artist, album, track, timestamp) VALUES (?,?,?,?,?)${",(?,?,?,?,?)".repeat(tracks.length - 1)}`, tracks.flat());
 
 	}
 
@@ -32,37 +51,54 @@ export default class CacheService {
 	}
 
 	async clearIndividual(discordid:string) {
-		let connection = await this.initDB();
-		let lastfmSession = (await connection.execute("SELECT lastfmsession FROM users WHERE discordid = ?", [discordid]))?.[0]?.[0]?.lastfmsession;
-		await connection.execute("DELETE FROM scrobbles WHERE lastfmsession = ?", [lastfmSession]);
+		let lastfmSession = (await this.pool.execute("SELECT lastfmsession FROM users WHERE discordid = ?", [discordid]))?.[0]?.[0]?.lastfmsession;
+		await this.pool.execute("DELETE FROM scrobbles WHERE lastfmsession = ?", [lastfmSession]);
 		return true;
 	}
 
-	async cacheIndividual(discordid:string) {
-		let connection = await this.initDB();
-		this.user = (await connection.execute("SELECT * FROM users WHERE discordid = ?", [discordid]))[0][0];
+	async cacheIndividual(discordid:string, willForce = false) {
+
+		if (discordid === undefined) {
+			throw "Discord id undefined in caching.";
+		}
+
+		this.user = (await this.pool.execute("SELECT * FROM users WHERE discordid = ?", [discordid]))[0][0];
+
+		if (this.user.lastfmsession === null) {
+			throw "User not logged in to last.fm.";
+		}
 
 		if (this.user.lastcachetime < 0) {
 			throw "Already updating cache for this user. Please hang on.";
 		}
 
-		await connection.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [-Number(new Date()), discordid.toString()]);
+		let scrobbleCount:number;
 
-		const scrobbleCount = (await connection.execute("SELECT COUNT(*) FROM scrobbles WHERE lastfmsession = ?", [this.user.lastfmsession]))[0][0]["COUNT(*)"];
+		if (willForce === true) {
+
+			if (this.user.lastfullcachetime > (Number(new Date()) - (1000 * 60 * 30))) {
+				throw "Cannot force update, please wait. There is a cooldown of 30 minutes. If you just want to update to show new scrobbles, you can do the command without the `force` parameter, which has no cooldown.";
+			}
+
+			await this.pool.execute("UPDATE users SET lastcachetime = ?, lastfullcachetime = ? WHERE discordid = ?", [-Number(new Date()), Number(new Date()), discordid.toString()]);
+			scrobbleCount = 0;
+			await this.pool.execute("DELETE FROM scrobbles WHERE lastfmsession = ?", [this.user.lastfmsession]);
+		} else {
+			await this.pool.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [-Number(new Date()), discordid.toString()]);
+			scrobbleCount = (await this.pool.execute("SELECT COUNT(*) FROM scrobbles WHERE lastfmsession = ?", [this.user.lastfmsession]))[0][0]["COUNT(*)"];
+		}
 
 		let scrobbleCacher = await lastfm.helper.cacheScrobbles(this.user.lastfmsession, {previouslyCached:scrobbleCount, parallelCaches: 10});
 
 		scrobbleCacher.on("data", (data) => {
-			this.addScrobbles(connection, data.data);
+			if (data.data.tracks.length > 0) {
+				this.addScrobbles(data.data);
+			}
 		});
 
 		scrobbleCacher.on("close", async () => {
 			await this.sleep(1000);
-			console.log(discordid);
-			console.log(Number(new Date()));
-			console.log((await connection.execute("SELECT * FROM users WHERE discordid = ?", [discordid]))[0][0]);
-			console.log(await connection.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [Number(new Date()), discordid]));
-			await connection.end();
+			await this.pool.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [Number(new Date()), discordid]);
 			return true;
 		});
 

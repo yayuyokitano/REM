@@ -17,13 +17,11 @@ export default class Login extends LastFMCommand {
 
 	async run(args:string) {
 
-		let connection = await this.initDB();
-		let [user] = await connection.execute("SELECT * FROM users WHERE discordid = ?", [this.message.author.id]);
+		let [user] = await this.pool.execute("SELECT * FROM users WHERE discordid = ?", [this.message.author.id]);
 		
 		if ((user as any[]).length === 0) {
-			await connection.execute("INSERT INTO users (discordid, lastcachetime) VALUES (?,?)", [this.message.author.id, 0]);
+			await this.pool.execute("INSERT INTO users (discordid, lastcachetime) VALUES (?,?)", [this.message.author.id, 0]);
 		}
-		connection.end();
 
 		let token = await this.lastfm.auth.getToken();
 
@@ -57,13 +55,11 @@ export default class Login extends LastFMCommand {
 						this.DM("Last.FM verification unsuccessful. Please try again.");
 						break;
 					}
-					let connection = await this.initDB();
-					await connection.execute("UPDATE users SET lastfmusername = ?, lastfmsession = ? WHERE discordid = ?", [session.name, session.key, this.message.author.id]);
-					connection.end();
+					await this.pool.execute("UPDATE users SET lastfmusername = ?, lastfmsession = ? WHERE discordid = ?", [session.name, session.key, this.message.author.id]);
 					
 					newEmbed = await this.createLoginEmbed({lastfmusername: session.name});
 					DM.edit(newEmbed);
-					await new CacheService().cacheIndividual(this.message.author.id);
+					await new CacheService(this.pool).cacheIndividual(this.message.author.id, true);
 					break;
 			}
 
@@ -71,9 +67,7 @@ export default class Login extends LastFMCommand {
 
 		collector.on("end", async (collected) => {
 
-			let connection = await this.initDB();
-			let [updatedUser] = await connection.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
-			connection.end();
+			let [updatedUser] = await this.pool.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
 
 			let newEmbed = (await this.createLoginEmbed(updatedUser, token))
 				.setTitle("Login Expired")
@@ -99,13 +93,13 @@ export default class Login extends LastFMCommand {
 
 		let embed = this.initEmbed();
 		embed.setTitle("Login to the bot")
-			.setDescription("To log into services, click the links, go through the verification process, and react with the corresponsing reaction.")
+			.setDescription("To log into services, click the links, and go through the corresponding verification process.")
 			.setFooter("Logins will expire in 10 minutes.");
 		
 		if (user.lastfmusername) {
 			embed.addField(`${this.constructEmoji("lastfm", "814628341100707851")} Last.FM`, `:white_check_mark: Logged in as ${user.lastfmusername}. First caching may take some time, and results may be off until then.`);
 		} else {
-			embed.addField(`${this.constructEmoji("lastfm", "814628341100707851")} Last.FM`, `[Click here](${this.generateTokenURL(token)})`);
+			embed.addField(`${this.constructEmoji("lastfm", "814628341100707851")} Last.FM`, `[Click here](${this.generateTokenURL(token)}) then **after logging in click the lastfm rection on this message.**`);
 		}
 			
 		return embed;

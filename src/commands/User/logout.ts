@@ -10,9 +10,7 @@ export default class Logout extends LastFMCommand {
 
 	async run(args:string) {
 
-		let connection = await this.initDB();
-		let [user] = await connection.execute("SELECT * FROM users WHERE discordid = ?", [this.message.author.id]);
-		connection.end();
+		let [user] = await this.pool.execute("SELECT * FROM users WHERE discordid = ?", [this.message.author.id]);
 
 		let embed = await this.createLogoutEmbed(user);
 		
@@ -29,23 +27,21 @@ export default class Logout extends LastFMCommand {
 		collector.on("collect", async (reaction) => {
 			
 			const {name} = reaction["_emoji"];
-			let connection = await this.initDB();
 			switch(name){
 				case "lastfm":
-					await new CacheService().clearIndividual(this.message.author.id);
+					await new CacheService(this.pool).clearIndividual(this.message.author.id);
 
-					await connection.execute("UPDATE users SET lastfmsession = NULL, lastfmusername = NULL, lastcachetime = NULL WHERE discordid = ?", [this.message.author.id]);
-					await connection.end();
+					await this.pool.execute("UPDATE users SET lastfmsession = NULL, lastfmusername = NULL, lastcachetime = NULL WHERE discordid = ?", [this.message.author.id]);
 					break;
 				case "✔️":
-					await new CacheService().clearIndividual(this.message.author.id);
+					await new CacheService(this.pool).clearIndividual(this.message.author.id);
 
-					await connection.execute("DELETE FROM users WHERE discordid = ?", [this.message.author.id]);
+					await this.pool.execute("DELETE FROM users WHERE discordid = ?", [this.message.author.id]);
+					break;
 
 			}
 
-			let [updatedUser] = await connection.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
-			connection.end();
+			let [updatedUser] = await this.pool.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
 
 			let newEmbed = (await this.createLogoutEmbed(updatedUser))
 				.setTitle("Logout Expired")
@@ -57,9 +53,7 @@ export default class Logout extends LastFMCommand {
 
 		collector.on("end", async (collected) => {
 
-			let connection = await this.initDB();
-			let [updatedUser] = await connection.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
-			connection.end();
+			let [updatedUser] = await this.pool.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [this.message.author.id]);
 
 			let newEmbed = (await this.createLogoutEmbed(updatedUser))
 				.setTitle("Logout Expired")

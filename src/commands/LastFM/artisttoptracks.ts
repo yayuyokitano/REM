@@ -11,11 +11,9 @@ export default class ArtistTopTracks extends LastFMCommand {
     const lastfmSessions = (await this.getRelevantLFM()).session;
 		const user = this.lastfm.user.getInfo(lastfmSessions[0]);
     const artist = await this.getRelevantArtist(args);
-    const connection = await this.initDB();
-    let [tracks] = await connection
+    let [tracks] = await this.pool
       .execute(`SELECT track, COUNT(*) AS \`scrobbleCount\` FROM scrobbles WHERE artist = ? AND lastfmsession = ? GROUP BY track ORDER BY \`scrobbleCount\` DESC`, [artist, lastfmSessions[0]])
       .catch((err) => { throw "Database error. Did you log in to Last.FM?"; });
-    await connection.end();
 
     if ((tracks as any[]).length === 0) {
       this.reply("you haven't scrobbled this artist!");

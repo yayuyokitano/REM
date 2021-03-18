@@ -5,14 +5,14 @@ import he from "he";
 
 export default class lyrics extends LastFMCommand {
 
-	category = "LastFM";
+	category = "Last.FM";
 	description = "Gets track lyrics";
 	usage = ["", "KITANO REM - Rolling Sky"];
 
 	async run(args:string) {
 
 		let lastfmSession = await this.getRelevantLFM();
-		let track = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
+		let {track} = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
 		let embed = this.initEmbed();
 		embed.setTitle(`Lyrics for ${track.artist.name} - ${track.name}`)
 

@@ -25,7 +25,8 @@ async function main() {
 		discordid VARCHAR(20) PRIMARY KEY,
 		lastfmusername VARCHAR(15),
 		lastfmsession CHAR(32),
-		lastcachetime BIGINT)`
+		lastcachetime BIGINT,
+		lastfullcachetime BIGINT DEFAULT 0)`
 	);
 
 	await connection.execute(`create TABLE IF NOT EXISTS scrobbles (
@@ -36,23 +37,25 @@ async function main() {
 		timestamp VARCHAR(20))`
 	);
 
-	let indices = [
+	let additions = [
 		"CREATE INDEX discordlfm ON users(discordid, lastfmsession)",
 		"CREATE INDEX lfmdiscord ON users(lastfmusername, discordid)",
 		"CREATE INDEX server ON servers(serverid)",
 		"CREATE INDEX artistindex ON scrobbles(artist)",
 		"CREATE INDEX albumindex ON scrobbles(album)",
 		"CREATE INDEX trackindex ON scrobbles(track)",
-		"CREATE INDEX userindex ON scrobbles(lastfmsession)"
+		"CREATE INDEX userindex ON scrobbles(lastfmsession)",
+		"CREATE INDEX cachetime ON users(lastfullcachetime)",
+		"ALTER TABLE users ADD timezone VARCHAR(100)"
 	]
 
-	for (let index of indices) {
-		await connection.execute(index)
+	for (let addition of additions) {
+		await connection.execute(addition)
 		.catch((err) => {
 			if (err.errno !== 1061) {
 				throw err;
 			}
-		}); //dont throw if its because index exists
+		}); //dont throw if error is because addition exists dy
 	}
 
 	await connection.end();

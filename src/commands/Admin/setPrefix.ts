@@ -13,7 +13,7 @@ export default class SetPrefix extends Command {
 			throw "Prefix cannot be more than 10 characters.";
 		}
 
-		await (await this.initDB()).execute("UPDATE servers SET prefix=? WHERE serverid=?", [args, this.message.guild.id]);
+		await this.pool.execute("UPDATE servers SET prefix=? WHERE serverid=?", [args, this.message.guild.id]);
 		this.reply(`Successfully changed prefix to ${args}`);
 
 	}

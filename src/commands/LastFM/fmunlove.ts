@@ -2,15 +2,14 @@ import LastFMCommand from "../../helpers/lastfmCommand";
 
 export default class FMunlove extends LastFMCommand {
 
-	category = "LastFM";
+	category = "Last.FM";
 	description = "Unloves currently playing track on Last.FM";
 	usage = [""];
 	alias = ["fmu", "unlove"];
 
 	async run(args:string) {
 
-		let connection = await this.initDB();
-		let lastfmSession = (await connection.execute("SELECT lastfmsession FROM users WHERE discordid = ?", [this.message.author.id]))?.[0]?.[0]?.lastfmsession;
+		let lastfmSession = (await this.pool.execute("SELECT lastfmsession FROM users WHERE discordid = ?", [this.message.author.id]))?.[0]?.[0]?.lastfmsession;
 
 		if (typeof lastfmSession === "undefined") {
 			throw `User is not logged in to last.fm. You can login using \`${await this.getPrefix()}login\``

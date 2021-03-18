@@ -2,7 +2,6 @@ import { Message, MessageEmbed, PermissionString } from "discord.js";
 import { CommandConstructor, CommandList } from "./commandInterface";
 import CommandListing from "./commandListing";
 import mysql from "mysql2/promise";
-import config from "../config.json";
 import { ParsedUrlQueryInput, stringify } from "querystring";
 import fetch from "node-fetch";
 import pinyinTone from "pinyin-tone-convert";
@@ -30,6 +29,11 @@ export default class Command {
 	category:string;
 	message:Message;
 	log:string;
+	pool:mysql.Pool;
+
+	constructor(pool:mysql.Pool) {
+		this.pool = pool;
+	}
 
 	init(msg:Message) {
 		this.message = msg;
@@ -43,7 +47,7 @@ export default class Command {
 	}
 
 	async reply(content:string|MessageEmbed) {
-		await this.message.reply(content);
+		return await this.message.reply(content);
 	}
 
 	list(commandConstructor:CommandConstructor) {
@@ -99,13 +103,6 @@ export default class Command {
 		})).text();
 	}
 
-	async initDB() {
-		const { host, user, password, database } = config.mysql;
-		const connection = await mysql.createConnection({host, user, password});
-		await connection.query(`USE ${database}`);
-		return connection;
-	}
-
 	fetchName(discordid:string = undefined) {
 		const member = this.message.guild?.member(discordid ?? this.message.author);
 		return member?.nickname || member?.user?.username || this.message.author.username;
@@ -121,9 +118,7 @@ export default class Command {
 	}
 
 	async getPrefix() {
-		let connection = await this.initDB();
-		let [pre] = await connection.execute("SELECT prefix FROM servers WHERE serverid = ?", [this.message.guild.id]);
-		await connection.end();
+		let [pre] = await this.pool.execute("SELECT prefix FROM servers WHERE serverid = ?", [this.message.guild.id]);
 		return pre?.[0]?.prefix as string;
 	}
 
@@ -235,6 +230,27 @@ export default class Command {
 	debugLog(args:string) {
 		this.reply("```json\n" + args + "\n```");
 		console.log(args);
+	}
+
+	getLocalizedTime(date:Date, timeZone:string) {
+		return date.toLocaleDateString('en-AU', {
+			timeZone,
+			timeZoneName: 'short',
+			minute: 'numeric',
+			hour: 'numeric',
+			weekday: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			month: 'short',
+		});
+	}
+
+	async getTimezone() {
+		return (await this.pool.execute("SELECT timezone FROM users WHERE discordid = ?", [this.message.author.id]))?.[0]?.[0]?.timezone ?? "Etc/UTC";
+	}
+
+	encodeURL(url:string) {
+		return encodeURIComponent(url);
 	}
 
 }
