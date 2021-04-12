@@ -4,11 +4,11 @@ import CommandHandler from "./discord/commandHandler";
 //import ReactionHandler from "./discord/reactionHandler";
 import mysql from "mysql2/promise"
 
-//initialize hanzi package for chinese commands
 import hanzi from "hanzi";
+hanzi.start();
+
 import CacheService from "./database/cacheService";
 import { exit } from "process";
-hanzi.start();
 
 const client = new Client();
 const command = new CommandHandler();

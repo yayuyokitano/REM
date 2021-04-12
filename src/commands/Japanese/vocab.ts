@@ -1,7 +1,6 @@
 import Command from "../../discord/command";
 import JishoApi, { JishoWordSense } from "unofficial-jisho-api";
 import capitalize from "capitalize";
-import { MessageEmbed } from "discord.js";
 
 const jisho = new JishoApi;
 
@@ -9,47 +8,46 @@ export default class JpVocab extends Command {
 
 	category = "Japanese";
 	description = "Gets information about a vocabulary word from [jisho.org](https://jisho.org/)";
-	usage = ["赤"];
+	usage = ["赤い", "park"];
 	alias = ["jpv", "jplookup", "japaneselookup", "japanesevocab"];
 
-	async run(args:string) {
-
-		let [word] = args.split(/\s+/);
+	async run(word:string) {
 
 		if (!word) {
 			this.reply("please include the word to search for.");
 			return;
 		}
 
-		const wordEntry = await jisho.searchForPhrase(word);
+		const {meta, data} = await jisho.searchForPhrase(word);
 
-		if (wordEntry.meta.status !== 200) {
-			throw `Jisho.org service error. Error code: ${wordEntry.meta.status}`;
+		if (meta.status !== 200) {
+			throw `Jisho.org service error. Error code: ${meta.status}`;
 		}
 
-		const data = wordEntry.data[0];
-
-		if (!data?.japanese?.[0]?.word) {
+		if (!data[0]?.japanese?.[0]?.word) {
 			this.reply("couldn't find word");
 			return;
 		}
 
-		let embed = this.initEmbed()
-			.setTitle(data.japanese[0].word)
-			.setURL("https://jisho.org/word/" + encodeURIComponent(data.japanese[0].word))
-			.setDescription(data.japanese[0].reading);
-		
-		embed = this.addDefinitions(embed, data.senses.entries());
+		let embed = this.initEmbed();
 
-		if (data.jlpt[0]){
-			embed.setFooter("JLPT " + data.jlpt.sort().slice(-1).join("").slice(-2).toUpperCase());
+		let definitionFields = [];
+
+		for (let entry of data) {
+			definitionFields.push({
+				title: entry.japanese[0].word,
+				url: "https://jisho.org/word/" + encodeURIComponent(entry.japanese[0].word),
+				description: `${entry.japanese[0].reading}${entry.jlpt[0] ? "・JLPT " + entry.jlpt.sort().slice(-1).join("").slice(-2).toUpperCase() : ""}`,
+				fields: this.addDefinitions(entry.senses.entries())
+			});
 		}
-
-		this.reply(embed);
+		
+		this.sendPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
 		
 	}
 
-	addDefinitions(embed:MessageEmbed, data:IterableIterator<[number, JishoWordSense]>) {
+	addDefinitions(data:IterableIterator<[number, JishoWordSense]>) {
+		let fields = [];
 		for (let [index, word] of data) {
 			if (index > 2) {
 				break;
@@ -60,9 +58,12 @@ export default class JpVocab extends Command {
 			} else {
 				field = word.parts_of_speech.join("・");
 			}
-			embed.addField(word.english_definitions.map((e) => capitalize(e)).join("・"), field);
+			fields.push({
+				name: word.english_definitions.map((e) => capitalize(e)).join("・"),
+				value: field
+			});
 		}
-		return embed;
+		return fields;
 	}
 
 }

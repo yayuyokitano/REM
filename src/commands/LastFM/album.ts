@@ -31,7 +31,6 @@ export default class AlbumInfo extends LastFMCommand {
 			if ((scrobbles as any[]).length > 0) {
 				userList = (await this.pool.execute(`SELECT lastfmsession, discordid FROM users WHERE lastfmsession IN (?${",?".repeat((scrobbles as any[]).length - 1)})`, (scrobbles as any[]).map(e => e.lastfmsession)))[0] as any[];
 			}
-			console.log(userList);
 
 			let members = await this.message.guild.members.fetch();
 			

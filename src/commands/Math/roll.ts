@@ -11,7 +11,19 @@ export default class Roll extends Command {
 
 		//easter egg
 		if (args.trim() === "out") {
-			this.reply("You heard him, 'bots! Let's show these creatures who we **really** are--");
+			let botList = ["720135602669879386"];
+
+			let str = "You heard him, 'bots! Let's show these creatures who we **really** are--";
+			for (let bot of botList) {
+				try {
+					await this.message.guild.members.fetch(bot);
+					str += ` <@${bot}>`;
+				} catch(err) {
+
+				}
+			}
+
+			this.reply(str);
 			return;
 		}
 

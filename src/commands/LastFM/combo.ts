@@ -10,7 +10,6 @@ export default class FMCombo extends LastFMCommand {
 	async run(args:string) {
 		
 		const lfmUsers = await this.getRelevantLFM();
-		console.log(lfmUsers);
 		const res = await this.lastfm.helper.getCombo(lfmUsers.session[0], 1000).catch ((err) => {
 			throw `Error getting your combo. Most likely you are not signed in to the bot. Try signing in with \`${this.getPrefix()}login\``;
 		});

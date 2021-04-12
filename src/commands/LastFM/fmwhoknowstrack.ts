@@ -4,7 +4,7 @@ export default class FMWhoKnowsTrack extends LastFMCommand {
 
 	category = "Last.FM";
   description = "Checks who knows a track in the server. Takes currently/last played track if none specified.";
-  alias = ["fmwt", "fmwkt"];
+  alias = ["fmwt", "fmwkt", "wt", "whoknowstrack"];
 	usage = ["", "KITANO REM - RAINSICK"];
 	sk:string;
 
@@ -16,15 +16,20 @@ export default class FMWhoKnowsTrack extends LastFMCommand {
 
 
 		let userPlays = await this.getTrackPlays(track.artist.name, track.name, userList);
-		userPlays[this.fetchName()] = track.userplaycount;
+		userPlays[this.fetchName()] = Number(track.userplaycount);
 
-		const resStr = (Object.entries(userPlays) as [string, number][]).sort((a, b) => b[1] - a[1]).map((e) => `${e[0]}: **${(e[1] as number).toLocaleString("fr")}** scrobbles`).slice(0, 15).join("\n");
+		let trackArray = [];
+
+		for (let [user, plays] of Object.entries(userPlays) as any[]) {
+			trackArray.push([plays, user]);
+		}
+
+		const total = trackArray.reduce((acc, cur) => acc + cur[0], 0);
 
 		const embed = this.initEmbed()
-			.setTitle(`Who knows **${track.artist.name}** - **${track.name}**?`)
-			.setDescription(resStr);
+			.setTitle(`Who knows **${track.artist.name}**?`);
 		
-		this.reply(embed);
+		this.createTableMessage(embed, trackArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${trackArray.length.toLocaleString("fr")} listeners**\n\n`);
 		
 	}
 

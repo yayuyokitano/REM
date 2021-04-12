@@ -18,7 +18,7 @@ export default class CacheService {
 
 		this.interval = setInterval(async () => {
 
-			const relevantUser = (await this.pool.query("SELECT discordid, lastcachetime FROM users WHERE lastcachetime > -1 ORDER BY lastcachetime LIMIT 1").catch((err) => {
+			const relevantUser = (await this.pool.query("SELECT discordid, lastcachetime FROM users WHERE lastcachetime > 0 ORDER BY lastcachetime LIMIT 1").catch((err) => {
 				console.error("No cacheable users for routine caching. You broke it.");
 			}))[0][0];
 
@@ -101,6 +101,8 @@ export default class CacheService {
 			await this.pool.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [Number(new Date()), discordid]);
 			return true;
 		});
+
+		return scrobbleCacher;
 
 	}
 

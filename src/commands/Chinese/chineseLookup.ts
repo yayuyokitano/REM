@@ -17,21 +17,45 @@ export default class CnVocab extends Command {
 			return;
 		}
 
-		const [definition] = hanzi.definitionLookup(word);
+		let definitions = hanzi.definitionLookup(word) ?? [];
 
-		if (!definition) {
+		definitions.push(...hanzi.dictionarySearch(word).flat());
+
+		if (definitions.length === 0) {
 			this.reply("couldn't find the word.");
 			return;
 		}
 
-		let embed = this.initEmbed()
-			.setTitle(word)
-			.setDescription(definition.definition.split("/").join("・"))
-			.addField("Simplified", definition.simplified, true)
-			.addField("Traditional", definition.traditional, true)
-			.addField("Pinyin", this.pinyinify(definition.pinyin).split(/\s+/).join(""));
+		let definitionFields = [];
 
-		this.reply(embed);
+		console.log(definitions);
+
+		for (let definition of definitions) {
+			definitionFields.push({
+				title: definition.word,
+				description: definition.definition.split("/").join("・"),
+				fields: [
+					{
+						name: "Simplified",
+						value: definition.simplified,
+						inline: true
+					},
+					{
+						name: "Traditional",
+						value: definition.traditional,
+						inline: true
+					},
+					{
+						name: "Pinyin",
+						value: this.pinyinify(definition.pinyin).split(/\s+/).join(""),
+						inline: false
+					}
+				]
+			});
+		}
+
+		let embed = this.initEmbed();
+		this.sendPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
 
 	}
 

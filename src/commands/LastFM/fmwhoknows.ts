@@ -4,7 +4,7 @@ export default class FMWhoKnows extends LastFMCommand {
 
 	category = "Last.FM";
   description = "Checks who knows an artist in the server. Takes currently/last played artist if none specified.";
-  alias = ["fmw", "fmwk"];
+  alias = ["fmw", "fmwk", "w", "whoknows"];
 	usage = ["", "KITANO REM"];
 	sk:string;
 
@@ -16,15 +16,20 @@ export default class FMWhoKnows extends LastFMCommand {
 
 
 		let userPlays = await this.getArtistPlays(artist.name, userList);
-		userPlays[this.fetchName()] = artist.stats.userplaycount;
+		userPlays[this.fetchName()] = Number(artist.stats.userplaycount);
 
-		const resStr = (Object.entries(userPlays) as [string, number][]).sort((a, b) => b[1] - a[1]).map((e) => `${e[0]}: **${(e[1] as number).toLocaleString("fr")}** scrobbles`).slice(0, 15).join("\n");
+		let artistArray = [];
+
+		for (let [user, plays] of Object.entries(userPlays) as any[]) {
+			artistArray.push([plays, user]);
+		}
+
+		const total = artistArray.reduce((acc, cur) => acc + cur[0], 0);
 
 		const embed = this.initEmbed()
-			.setTitle(`Who knows **${artist.name}**?`)
-			.setDescription(resStr);
+			.setTitle(`Who knows **${artist.name}**?`);
 		
-		this.reply(embed);
+		this.createTableMessage(embed, artistArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${artistArray.length.toLocaleString("fr")} listeners**\n\n`);
 		
 	}
 

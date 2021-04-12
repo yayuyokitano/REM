@@ -9,7 +9,7 @@ export default class AlbumTopTracks extends LastFMCommand {
 
 	async run(args:string) {
 
-		const lastfmSessions = (await this.getRelevantLFM()).session;
+		const lastfmSessions = (await this.getRelevantLFM(false)).session;
 		const user = this.lastfm.user.getInfo(lastfmSessions[0]);
     const {artist, album} = await this.getRelevantAlbum(args);
     let [tracks] = await this.pool
@@ -21,18 +21,23 @@ export default class AlbumTopTracks extends LastFMCommand {
       return;
     }
 
-    const total = (tracks as any[]).reduce((acc, cur) => acc + cur.scrobbleCount, 0);
+    if ((tracks as any[]).length === 0) {
+			this.reply("you haven't scrobbled this artist!");
+			return;
+		}
 
-    const width = tracks[0].scrobbleCount.toLocaleString("fr").length;
+		let trackArray = [];
 
-    const trackstr = (tracks as any[]).map((e) => `\`${e.scrobbleCount.toLocaleString("fr").padStart(width, " ")}\` scrobbles - **${Buffer.from(e.track, "utf-8")}**`).slice(0, 15).join("\n");
+		for (let track of tracks as any[]) {
+			trackArray.push([track.scrobbleCount, track.track]);
+		}
 
-    const embed = this.initEmbed()
-      .setTitle(`${(await user).name}'s top ${album} tracks`)
-      .setDescription(`**${total.toLocaleString("fr")} scrobbles from ${(tracks as any[]).length.toLocaleString("fr")} tracks**\n\n${trackstr}`);
-    
-    this.reply(embed);
+		const total = trackArray.reduce((acc, cur) => acc + cur[0], 0);
 
+		const embed = this.initEmbed()
+			.setTitle(`${(await user).name}'s top ${album} tracks`);
+		
+		this.createTableMessage(embed, trackArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${trackArray.length.toLocaleString("fr")} tracks**\n\n`);
 	}
 
 }

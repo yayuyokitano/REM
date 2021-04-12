@@ -3,7 +3,6 @@ import config from "../config.json";
 
 async function main() {
 	const { host, user, password, database } = config.mysql;
-	// create the connection
 	const connection = await mysql.createConnection({
 		host,
 		user,
@@ -55,7 +54,7 @@ async function main() {
 			if (err.errno !== 1061) {
 				throw err;
 			}
-		}); //dont throw if error is because addition exists dy
+		}); //dont throw if error because addition exists dy
 	}
 
 	await connection.end();

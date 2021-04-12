@@ -17,7 +17,7 @@ export default class LastFMCommand extends Command {
 		return lastfmsession;
 	}
 
-	async getRelevantLFM() {
+	async getRelevantLFM(allowLFM = true) {
 
 		let mentions = this.getRelevantUser({lfm:true});
 		let session:string[] = [];
@@ -25,15 +25,17 @@ export default class LastFMCommand extends Command {
 
 		for (let mention of mentions.slice(0, 5)) {
 			if (mention.startsWith("lfm:")) {
-				session.push(mention.slice(4));
-				safe.push(mention.slice(4));
+				if (allowLFM === true) {
+					session.push(mention.slice(4));
+					safe.push(mention.slice(4));
+				}
 			} else {
 				session.push((await this.pool.execute("SELECT lastfmsession FROM users WHERE discordid = ?", [mention]))?.[0]?.[0]?.lastfmsession);
 				safe.push((await this.pool.execute("SELECT lastfmusername FROM users WHERE discordid = ?", [mention]))?.[0]?.[0]?.lastfmusername);
 			}
 		}
 
-		return {session, safe};
+		return {session: session.filter(e => e !== undefined), safe: safe.filter(e => e !== undefined)};
 
 	}
 
@@ -154,6 +156,7 @@ export default class LastFMCommand extends Command {
 					recent: recent.details.recent.data
 				};
 			} catch(err) {
+				console.log(err);
 				throw `Error fetching currently playing artist. Most likely you are not signed in to the bot. Try signing in with \`${await this.getPrefix()}login\``;
 			}
 
@@ -219,6 +222,31 @@ export default class LastFMCommand extends Command {
 
 	getArtistURL(artist:string) {
 		return `https://www.last.fm/music/${this.encodeURL(artist)}`;
+	}
+
+	convertToLFMTime(args:string) {
+		switch (args) {
+			case "w":
+				return "7day";
+			case "m":
+				return "1month";
+			case "q":
+				return "3month";
+			case "h":
+				return "6month";
+			case "y":
+				return "12month";
+			default:
+				return "overall";
+		}
+	}
+
+	getAlbumURL(artist:string, album:string) {
+		return `https://www.last.fm/music/${this.encodeURL(artist)}/${this.encodeURL(album)}`;
+	}
+
+	getTrackURL(artist:string, track:string) {
+		return `https://www.last.fm/music/${this.encodeURL(artist)}/_/${this.encodeURL(track)}`;
 	}
 
 }

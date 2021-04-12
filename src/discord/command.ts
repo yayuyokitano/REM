@@ -1,4 +1,4 @@
-import { Message, MessageEmbed, PermissionString } from "discord.js";
+import { Message, MessageEmbed, MessageEmbedOptions, PermissionString, ReactionUserManager } from "discord.js";
 import { CommandConstructor, CommandList } from "./commandInterface";
 import CommandListing from "./commandListing";
 import mysql from "mysql2/promise";
@@ -171,7 +171,7 @@ export default class Command {
 	}
 
 	removeMentions(args:string) {
-		return args.replace(/<@[0-9]+>/g, "");
+		return args.replace(/<@[!0-9]+>/g, "");
 	}
 
 	pluralize(arg:[string, any]) {
@@ -251,6 +251,97 @@ export default class Command {
 
 	encodeURL(url:string) {
 		return encodeURIComponent(url);
+	}
+
+	setDescriptionOrFields(embed:MessageEmbed, message:MessageEmbedOptions|string) {
+		if (typeof message === "string") {
+			embed.setDescription(message);
+		} else {
+			for (let [key, value] of Object.entries(message)) {
+				embed[key] = value;
+			}
+		}
+		return embed;
+	}
+
+	async sendPaginatedMessage(embed:MessageEmbed, messageArray:(MessageEmbedOptions|string)[], entriesPerPage:number, totalEntries:number) {
+
+		embed = this.setDescriptionOrFields(embed, messageArray[0]);
+
+		embed.setFooter(`Showing ${1}-${Math.min(totalEntries, entriesPerPage)} of ${totalEntries} entries`);
+		let page = 0;
+
+		let reply = await this.reply(embed);
+
+		if (messageArray.length === 1 || (messageArray.length === 2 && messageArray[1].toString().trim() === "")) {
+			return;
+		}
+
+		let reactionArray = ["825611085541408788", "825611085700530216", "825611085772095498", "825611085913784350"];
+
+		for (let emoji of reactionArray) {
+			await reply.react(emoji);
+		}
+		
+		const collector = reply.createReactionCollector((reaction) => reactionArray.includes(reaction.emoji.id), {time: 2 * this.MINUTES});
+
+		collector.on("collect", async (reaction, user) => {
+			switch (reaction.emoji.id) {
+				case "825611085541408788":
+					page = 0;
+					break;
+				case "825611085700530216":
+					page = Math.max(0, page - 1);
+					break;
+				case "825611085772095498":
+					page = Math.min(messageArray.length - 1, page + 1);
+					break;
+				case "825611085913784350":
+					page = messageArray.length - 1;
+					break;
+			}
+
+			await reaction.users.remove(user);
+
+			embed = this.setDescriptionOrFields(embed, messageArray[page])
+				.setFooter(`Showing ${entriesPerPage * page + 1}-${Math.min(totalEntries, entriesPerPage * (page + 1))} of ${totalEntries} entries`);
+			reply.edit(embed);
+		});
+
+	}
+
+	formatTableNumber(num:number, len:number) {
+		return num.toLocaleString("fr").padStart(len, " ");
+	}
+
+	createTableMessage(embed:MessageEmbed, tableArray:[number, string][], classifier:[string, string], prefix:string) {
+		tableArray = tableArray.sort((a, b) => b[0] - a[0]);
+		let len = tableArray[0][0].toLocaleString("fr").length;
+		let tableString = tableArray.reduce((acc, curr) => acc + `\`${this.formatTableNumber(curr[0], len)}\` ${classifier[Number(curr[0] !== 1)]} - ${curr[1]}\n`, "") as string;
+
+		let messageArray = tableString.match(/(.*?\n){15}/g)?.map(e => prefix + e.trim());
+		if (messageArray) {
+			messageArray.push(prefix + tableString.slice(messageArray.reduce((acc, cur) => acc + cur.length, 0) - (prefix.length - 1) * messageArray.length));
+		}
+		this.sendPaginatedMessage(embed, messageArray ?? [prefix + tableString.trim()], 15, tableArray.length);
+	}
+
+	getOrdinalNumber(num:number) {
+		let numString = num.toString();
+		if (numString.slice(-2, -1)[0] === "1") {
+			return `${numString}th`;
+		} else {
+			switch (numString.slice(-1)[0]) {
+				case "1":
+					return `${numString}st`;
+				case "2":
+					return `${numString}nd`;
+				case "3":
+					return `${numString}rd`;
+				default:
+					return `${numString}th`;
+			}
+		}
 	}
 
 }
