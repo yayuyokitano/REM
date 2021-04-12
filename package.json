@@ -11,7 +11,7 @@
 		"glob": "^7.1.6",
 		"hanzi": "^2.1.5",
 		"he": "^1.2.0",
-		"lastfm-typed": "^1.1.2",
+		"lastfm-typed": "^1.2.1",
 		"mathjs": "^9.2.0",
 		"mysql2": "^2.2.5",
 		"node-fetch": "^2.6.1",
@@ -19,6 +19,7 @@
 		"parse-duration": "github:yayuyokitano/parse-duration",
 		"pinyin-tone-convert": "^0.0.2",
 		"random-int": "^2.0.1",
+		"spacetime": "^6.14.0",
 		"unofficial-jisho-api": "^2.0.13"
 	},
 	"name": "rem",
