@@ -32,8 +32,6 @@ export default class ArtistAnniversary extends LastFMCommand {
 				return scrobbleTime.month() === currParts[0] && scrobbleTime.date() === currParts[1] && (Number(artist.firstScrobble) < compareTS);
 			});
 
-			console.log(sameDay);
-
 			if (sameDay.length === 0) {
 				this.reply(`${lastfmSession.safe[0]} has no artist anniversaries today`);
 				return;
@@ -46,7 +44,7 @@ export default class ArtistAnniversary extends LastFMCommand {
 
 			for (let artist of (res as any[]).slice(0, 5)) {
 				let numYears = Math.round((currTS - Number(artist.firstScrobble)) / 31556952);
-				embed.addField(artist.artist, `${lastfmSession.safe[0]} first scrobbled ${artist.artist} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled them ${artist.scrobbleCount} time${artist.scrobbleCount === 1 ? "" : "s"}`);
+				embed.addField(this.getArtistURLMarkdown(artist.artist), `${lastfmSession.safe[0]} first scrobbled ${artist.artist} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled them ${artist.scrobbleCount} time${artist.scrobbleCount === 1 ? "" : "s"}`);
 			}
 
 			this.reply(embed);

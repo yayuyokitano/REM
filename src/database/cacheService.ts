@@ -22,6 +22,8 @@ export default class CacheService {
 				console.error("No cacheable users for routine caching. You broke it.");
 			}))[0][0];
 
+			console.log("Starting caching for " + relevantUser);
+
 			this.cacheIndividual(relevantUser.discordid).catch(err => {
 				console.error(`Routine caching failed for discord id ${relevantUser.discordid}. Reason:\n` + JSON.stringify(err));
 			});
@@ -38,7 +40,11 @@ export default class CacheService {
 
 		let tracks = data.tracks.map(e => {
 			return [this.user.lastfmsession ,e.artist.name, e.album.name, e.name, e.date.uts];
-		})
+		});
+
+		if (tracks.length === 0) {
+			throw "No new scrobbles";
+		}
 
 		this.pool.execute(`INSERT INTO scrobbles (lastfmsession, artist, album, track, timestamp) VALUES (?,?,?,?,?)${",(?,?,?,?,?)".repeat(tracks.length - 1)}`, tracks.flat());
 
@@ -99,6 +105,7 @@ export default class CacheService {
 		scrobbleCacher.on("close", async () => {
 			await this.sleep(1000);
 			await this.pool.execute("UPDATE users SET lastcachetime = ? WHERE discordid = ?", [Number(new Date()), discordid]);
+			console.log("Finished caching for " + discordid);
 			return true;
 		});
 

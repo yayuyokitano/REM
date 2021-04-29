@@ -29,7 +29,7 @@ export default class AlbumTopTracks extends LastFMCommand {
 		let trackArray = [];
 
 		for (let track of tracks as any[]) {
-			trackArray.push([track.scrobbleCount, track.track]);
+			trackArray.push([track.scrobbleCount, `**${this.getTrackURLMarkdown(artist, track.track)}**`]);
 		}
 
 		const total = trackArray.reduce((acc, cur) => acc + cur[0], 0);

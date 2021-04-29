@@ -23,7 +23,7 @@ export default class ArtistTopAlbums extends LastFMCommand {
 		let albumArray = [];
 
 		for (let album of albums as any[]) {
-			albumArray.push([album.scrobbleCount, album.album]);
+			albumArray.push([album.scrobbleCount, `**${this.getAlbumURLMarkdown(artist, album.album)}**`]);
 		}
 
     const total = albumArray.reduce((acc, cur) => acc + cur[0], 0);
@@ -31,7 +31,7 @@ export default class ArtistTopAlbums extends LastFMCommand {
 		const embed = this.initEmbed()
 			.setTitle(`${(await user).name}'s top ${artist} albums`);
 		
-		this.createTableMessage(embed, albumArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${albumArray.length.toLocaleString("fr")} tracks**\n\n`);
+		this.createTableMessage(embed, albumArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${albumArray.length.toLocaleString("fr")} albums**\n\n`);
 
 	}
 

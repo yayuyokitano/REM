@@ -1,4 +1,4 @@
-import { Message, MessageEmbed } from "discord.js";
+import { Message, MessageEmbed, VoiceConnection } from "discord.js";
 import mysql from "mysql2/promise";
 import {promisify} from "util";
 import _glob from "glob";
@@ -11,11 +11,25 @@ interface CommandNameList {
 	[key:string]:string[];
 }
 
+interface VoiceConnections {
+	[guild:string]:{
+		connection:Promise<VoiceConnection>|VoiceConnection;
+		urls:string[];
+		isPlaying:boolean;
+		currPlaying:{artist:string,album:string,track:string};
+	}
+}
+
 export default class CommandHandler {
 
 	pool:mysql.Pool;
 	files:string[];
 	CommandList:CommandList;
+	voiceConnections:VoiceConnections;
+
+	constructor() {
+		this.voiceConnections = {};
+	}
 
 	initPool(pool:mysql.Pool) {
 		this.pool = pool;
@@ -102,15 +116,17 @@ export default class CommandHandler {
 
 	async execute(command:string, args:string, msg:Message) {
 		if (this.CommandList.hasOwnProperty(command)) {
-			let cmd = new this.CommandList[command].command(this.pool)
-			cmd.init(msg).run(args).catch(async (err) => {
-				console.log(err);
+			msg.channel.startTyping();
+			let cmd = new this.CommandList[command].command(this.pool);
+			await cmd.init(msg, this).run(args).catch(async (err) => {
 				let embed = this.initEmbed(msg)
 					.addField("Error details", err);
 				msg.reply(embed);
-				cmd.log += "\nERROR: \n" + JSON.stringify(err) + "\n";
-				console.error(cmd.log);
+				msg.channel.stopTyping();
+				cmd.log += "ERROR:";
+				console.error(cmd.log, err);
 			});
+			msg.channel.stopTyping();
 		}
 	}
 

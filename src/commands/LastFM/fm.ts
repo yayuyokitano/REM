@@ -1,4 +1,5 @@
 import LastFMCommand from "../../helpers/lastfmCommand";
+import tagFilter from "lastfm-tag-processor";
 
 const reactionList = {
 	"KITANO REM": "819637965771767868",
@@ -35,10 +36,7 @@ export default class FM extends LastFMCommand {
 		}
 
 		try {
-			let nowplaying = await this.lastfm.helper.getNowPlaying(lastfmSession, ["artist", "album", "track"]);
-
-			let album = nowplaying.recent.album ? (nowplaying.details.album.successful ? ` from [${nowplaying.recent.album}](${nowplaying.details.album.data.url})` : ` from ${nowplaying.recent.album}`) : "";
-			let artist = nowplaying.details.artist.successful ? `by [${nowplaying.recent.artist}](${nowplaying.details.artist.data.url})` : `by ${nowplaying.recent.artist}`;
+			let nowplaying = await this.lastfm.helper.getNowPlaying(lastfmSession, ["artist", "album", "track"], {extended: "1"});
 
 			let playcount = "";
 
@@ -61,13 +59,13 @@ export default class FM extends LastFMCommand {
 				tagList.push(...nowplaying.details.track.data.toptags.map(e => e.name));
 			}
 
-			let tags = new Set(tagList);
+			let tags = tagFilter(tagList);
 
 			embed.setTitle(nowplaying.recent.track)
-				.setURL(nowplaying.details.track.data?.url)
+				.setURL(nowplaying.details.track.data?.url || this.getTrackURL(nowplaying.recent.artist, nowplaying.recent.track))
 				.setThumbnail(nowplaying.recent.image[2]?.url)
-				.setDescription(artist + album)
-				.addField(playcount || `No data found for ${nowplaying.recent.artist}`, ([...tags].slice(0,5).join("・") || `No tags found for ${nowplaying.recent.artist}`));
+				.setDescription(this.getArtistAlbumMarkdownSetURL(nowplaying.recent.artist, nowplaying.recent.album, nowplaying.details.artist.data?.url, nowplaying.details.album.data?.url))
+				.addField(`${nowplaying.details.recent.data.tracks[0].loved ? "❤️ " : ""}${playcount || `No data found for ${nowplaying.recent.artist}`}${nowplaying.details.recent.data.tracks[0].loved ? " ❤️" : ""}`, [...tags].slice(0,5).join("・") || `No tags found for ${nowplaying.recent.artist}`);
 			
 			let npMsg = await this.reply(embed);
 

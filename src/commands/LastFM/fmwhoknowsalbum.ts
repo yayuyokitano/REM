@@ -30,7 +30,8 @@ export default class FMWhoKnowsAlbum extends LastFMCommand {
 		const total = albumArray.reduce((acc, cur) => acc + cur[0], 0);
 
 		const embed = this.initEmbed()
-			.setTitle(`Who knows **${album.artist}** - **${album.name}**?`);
+			.setTitle(`Who knows **${album.artist}** - **${album.name}**?`)
+			.setURL(album.url);
 		
 		this.createTableMessage(embed, albumArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${albumArray.length.toLocaleString("fr")} listeners**\n\n`);
 		

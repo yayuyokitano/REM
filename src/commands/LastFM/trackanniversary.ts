@@ -58,7 +58,7 @@ export default class TrackAnniversary extends LastFMCommand {
 					continue;
 				}
 				let numYears = Math.round((currTS - Number(track.firstScrobble)) / 31556952);
-				embed.addField(`${track.artist} - ${track.track}`, `${lastfmSession.safe[0]} first scrobbled ${track.track} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled it ${track.scrobbleCount} time${track.scrobbleCount === 1 ? "" : "s"}`);
+				embed.addField(this.getCombinedTrackMarkdown(track.artist, track.track), `${lastfmSession.safe[0]} first scrobbled ${track.track} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled it ${track.scrobbleCount} time${track.scrobbleCount === 1 ? "" : "s"}`);
 				success++;
 				if (success >= 5) {
 					break;

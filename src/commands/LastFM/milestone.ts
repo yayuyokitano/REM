@@ -36,7 +36,7 @@ export default class Milestone extends LastFMCommand {
 			embed.setTitle(track.name)
 				.setURL(track.url)
 				.setThumbnail(track.image[2].url)
-				.setDescription(artist + album)
+				.setDescription(this.getArtistAlbumMarkdown(track.artist.name, track.album.name))
 				.setFooter(`Scrobbled on ${this.getLocalizedTime(new Date(Number(track.date.uts) * 1000), await this.getTimezone())}`);
 			
 			await this.reply(embed);

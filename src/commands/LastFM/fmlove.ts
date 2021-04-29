@@ -18,17 +18,14 @@ export default class FMlove extends LastFMCommand {
 		try {
 			let nowplaying = await this.lastfm.helper.getNowPlaying(lastfmSession);
 
-			let album = nowplaying.recent.album ? (nowplaying.details.album.successful ? ` from [${nowplaying.recent.album}](${nowplaying.details.album.data.url})` : ` from ${nowplaying.recent.album}`) : "";
-			let artist = nowplaying.details.artist.successful ? `by [${nowplaying.recent.artist}](${nowplaying.details.artist.data.url})` : `by ${nowplaying.recent.artist}`;
-
 			await this.lastfm.track.love(nowplaying.recent.artist, nowplaying.recent.track, lastfmSession);
 
 			let embed = this.initEmbed(`❤️ ${nowplaying.recent.username} just loved:`);
 
 			embed.setTitle(nowplaying.recent.track)
-				.setURL(nowplaying.details.track.data?.url)
+				.setURL(nowplaying.details.track.data?.url || this.getTrackURL(nowplaying.recent.artist, nowplaying.recent.track))
 				.setThumbnail(nowplaying.recent.image[1]?.url)
-				.setDescription(artist + album);
+				.setDescription(this.getArtistAlbumMarkdownSetURL(nowplaying.recent.artist, nowplaying.recent.album, nowplaying.details.artist.data?.url, nowplaying.details.album.data?.url));
 			
 			this.reply(embed);
 

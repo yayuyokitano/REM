@@ -2,6 +2,9 @@ import LastFM from "lastfm-typed";
 import Command from "../discord/command";
 import config from "../config.json";
 import mysql from "mysql2/promise";
+import { Readable } from "node:stream";
+import YoutubeParser from "./youtubeParser";
+import ytdl from "ytdl-core-discord";
 
 export default class LastFMCommand extends Command {
 
@@ -10,6 +13,16 @@ export default class LastFMCommand extends Command {
 	constructor(pool:mysql.Pool) {
 		super(pool);
 		this.lastfm = new LastFM(config.lastfm.key, { apiSecret:config.lastfm.secret });
+
+		/*("requestStart", (args, method) => {
+			console.log("REQUEST START: ", method, args);
+		});
+		this.lastfm.on("requestComplete", (args, time, res) => {
+			console.log("REQUEST COMPLETE: ", args, `Executed in ${time}ms`, res);
+		});
+		this.lastfm.on("requestPrepare", (args) => {
+			console.log("REQUEST PREPARE: ", args);
+		})*/
 	}
 
 	async getLastfmSession() {
@@ -220,10 +233,6 @@ export default class LastFMCommand extends Command {
 
 	}
 
-	getArtistURL(artist:string) {
-		return `https://www.last.fm/music/${this.encodeURL(artist)}`;
-	}
-
 	convertToLFMTime(args:string) {
 		switch (args) {
 			case "w":
@@ -241,12 +250,75 @@ export default class LastFMCommand extends Command {
 		}
 	}
 
-	getAlbumURL(artist:string, album:string) {
-		return `https://www.last.fm/music/${this.encodeURL(artist)}/${this.encodeURL(album)}`;
-	}
+	async playSong() {
+		const voiceConnection = this.handler.voiceConnections[this.message.guild.id];
+		const connection = await voiceConnection.connection;
+		voiceConnection.urls = voiceConnection.urls.filter(e => e !== void 0);
+		if (voiceConnection.urls.length === 0) {
+			this.message.channel.send("No more songs in queue, leaving.");
+			connection.disconnect();
+			return;
+		}
+		if ((await voiceConnection.connection).voice.channel.members.filter(e => !e.user.bot).size < 1) {
+			this.message.channel.send("No more users in channel, leaving.");
+			connection.disconnect();
+			return;
+		}
+		const url = voiceConnection.urls.shift();
 
-	getTrackURL(artist:string, track:string) {
-		return `https://www.last.fm/music/${this.encodeURL(artist)}/_/${this.encodeURL(track)}`;
+		if (connection?.channel.id !== this.message.member.voice.channelID) {
+			this.reply("You must join the same channel as me first!");
+			return;
+		}
+
+		if (!this.message.member.voice?.channel.speakable) {
+			this.reply("I cannot speak in this channel!");
+			return;
+		}
+		let stream:Readable;
+		try {
+			stream = await ytdl(url);
+		} catch(err) {
+			this.message.channel.send(`There was an error playing song from url ${url}, skipping...`);
+		}
+		
+		const dispatcher = connection.play(stream, {type: "opus"});
+		voiceConnection.isPlaying = true;
+		dispatcher.on("finish", async() => {
+			const lastfmsessions = (await this.pool.execute(`SELECT lastfmsession FROM users WHERE discordid IN (?${",?".repeat(connection.channel.members.size - 1)})`, connection.channel.members.keyArray()))[0] as {lastfmsession:string}[];
+			for (let session of lastfmsessions) {
+				if (session.lastfmsession) {
+					this.lastfm.track.scrobble(session.lastfmsession, [{artist, track, album, timestamp:Math.floor(Date.now() / 1000)}]);
+				}
+			}
+			this.playSong();
+		});
+		let info = (await ytdl.getBasicInfo(url)).videoDetails;
+		let {artist, album, track} = await new YoutubeParser(info, this.pool).getTags();
+		let embed = this.initEmbed(`Now Playing - 🔊${connection.channel.name}`)
+			.setTitle(track)
+			.setURL(this.getTrackURL(artist, track))
+			.setDescription(this.getArtistAlbumMarkdown(artist, album));
+
+		this.handler.voiceConnections[this.message.guild.id].currPlaying = {artist, album, track};
+		const lastfmsessions = (await this.pool.execute(`SELECT lastfmsession FROM users WHERE discordid IN (?${",?".repeat(connection.channel.members.size - 1)})`, connection.channel.members.keyArray()))[0] as {lastfmsession:string}[];
+		for (let session of lastfmsessions) {
+			if (session.lastfmsession) {
+				this.lastfm.track.updateNowPlaying(artist, track, session.lastfmsession, {duration: Number(info.lengthSeconds), ...(album ? {album} : {})});
+			}
+		}
+
+		if (album) {
+			try {
+				const img = (await this.lastfm.album.getInfo({artist, album}))?.image?.[2]?.url;
+				embed.setThumbnail(img);
+			} catch (err) {
+				embed.setThumbnail("https://lastfm.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png");
+			}
+		}
+
+		embed.author.iconURL = info.author.thumbnails?.[0]?.url;
+		this.message.channel.send(embed);
 	}
 
 }

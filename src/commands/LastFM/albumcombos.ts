@@ -13,20 +13,23 @@ export default class AlbumCombos extends LastFMCommand {
 
 		//https://stackoverflow.com/a/1254620 you legend
 		const res = (await this.pool.execute(`WITH OrderedTable AS (
-			SELECT artist, album, ROW_NUMBER() OVER (ORDER BY timestamp) AS \`rownr\` FROM scrobbles WHERE lastfmsession=? AND album != ""
+			SELECT artist, album, timestamp FROM scrobbles WHERE lastfmsession=?
+		),
+		RowNum AS (
+			SELECT *, ROW_NUMBER() OVER (ORDER BY timestamp) AS rownr FROM OrderedTable
 		),
 		Heads AS (
-			SELECT cur.rownr, cur.artist, cur.album, ROW_NUMBER() OVER (ORDER BY cur.rownr) AS \`headnr\`
-			FROM OrderedTable cur
-			LEFT JOIN OrderedTable prev ON cur.rownr = prev.rownr+1
-			WHERE IFNULL(prev.artist,-1) != cur.artist OR IFNULL(prev.album,-1) != cur.album
+			SELECT cur.rownr, cur.artist, cur.album, cur.timestamp - IFNULL(LAG(cur.timestamp) OVER (ORDER BY cur.timestamp), 0) AS timeDiff, ROW_NUMBER() OVER (ORDER BY cur.rownr) AS headnr
+			FROM RowNum cur
+			LEFT JOIN RowNum prev ON cur.rownr = prev.rownr+1
+			WHERE ((IFNULL(prev.artist,-1) != cur.artist) OR (IFNULL(prev.album,-1) != cur.album))
 		),
 		Combos AS (
-			SELECT artist, album, (IFNULL(LEAD(rownr) OVER (ORDER BY headnr), (SELECT COUNT(*) FROM scrobbles WHERE lastfmsession=?)) - rownr) AS \`combo\` FROM Heads
+			SELECT artist, album, headnr, MIN(timeDiff) AS minDiff, (IFNULL(LEAD(rownr) OVER (ORDER BY headnr), (SELECT COUNT(*) FROM scrobbles WHERE lastfmsession=?)) - rownr) AS combo FROM Heads GROUP BY headnr
 		)
-		SELECT * FROM Combos WHERE combo > 4`,[session[0], session[0]]))[0] as any[];
+		SELECT artist, album, combo FROM Combos WHERE combo > 4 AND minDiff > 5 AND album != ""`, [session[0], session[0]]))[0] as any[];
 
-		const ret = res.map(e => [e.combo, `**${e.album}** by ${e.artist}`]) as [number, string][];
+		const ret = res.map(e => [e.combo, `**${this.getAlbumURLMarkdown(e.artist, e.album)}** by ${this.getArtistURLMarkdown(e.artist)}`]) as [number, string][];
 		let embed = this.initEmbed();
 		embed.setTitle(`${safe[0]}'s top album combos`);
 

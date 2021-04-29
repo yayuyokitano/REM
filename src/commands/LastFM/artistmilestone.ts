@@ -37,7 +37,7 @@ export default class ArtistMilestone extends LastFMCommand {
 
 		} catch(err) {
 			console.log(err);
-			throw `There was an error connecting to Last.FM. User may not have connected their Last.FM account, which can be done by doing \`${await this.getPrefix()}login\``
+			throw "User has not scrobbled that many artists";
 		}
 
 	}

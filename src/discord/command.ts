@@ -1,4 +1,4 @@
-import { Message, MessageEmbed, MessageEmbedOptions, PermissionString, ReactionUserManager } from "discord.js";
+import { Message, MessageEmbed, MessageEmbedOptions, PermissionString } from "discord.js";
 import { CommandConstructor, CommandList } from "./commandInterface";
 import CommandListing from "./commandListing";
 import mysql from "mysql2/promise";
@@ -7,6 +7,14 @@ import fetch from "node-fetch";
 import pinyinTone from "pinyin-tone-convert";
 import hanzi from "hanzi";
 import parseDuration from "parse-duration";
+import CommandHandler from "./commandHandler";
+import config from "../config.json";
+import youtubeSearch from "youtube-search";
+
+let opts = {
+	maxResults: 1,
+	key: config.other.youtube
+}
 
 interface durationObj {
 	year?:number;
@@ -30,18 +38,21 @@ export default class Command {
 	message:Message;
 	log:string;
 	pool:mysql.Pool;
+	handler:CommandHandler;
 
 	constructor(pool:mysql.Pool) {
 		this.pool = pool;
 	}
 
-	init(msg:Message) {
+	init(msg:Message, handler:CommandHandler) {
 		this.message = msg;
 		this.log = "---------------------------------------\nTime: " + new Date().toISOString()
 		+ "\nMessage ID: " + msg.id
 		+ "\nMessage Content: " + msg.content + "\n";
 
 		this.log += "\n\n-Running command.";
+
+		this.handler = handler;
 
 		return this;
 	}
@@ -308,6 +319,9 @@ export default class Command {
 			reply.edit(embed);
 		});
 
+		collector.on("end", () => {
+			reply.reactions.removeAll();
+		})
 	}
 
 	formatTableNumber(num:number, len:number) {
@@ -342,6 +356,69 @@ export default class Command {
 					return `${numString}th`;
 			}
 		}
+	}
+
+	getYTPlaylist(str:string) {
+		return str.match(/(?:https|http):\/\/(?:www\.)?youtube\.com\/playlist\?list=(.*?)(?:$|\&)/)?.[1];
+	}
+
+	async getYTLink(str:string) {
+		let link = "";
+		if (str.match(/(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?\/?.*(?:watch|embed)?(?:.*v=|v\/|\/)([\w\-_]+)\&?/)) {
+			link = str;
+		} else {
+			const res = await youtubeSearch(str, opts);
+			link = res.results[0].id;
+		}
+		this.handler.voiceConnections[this.message.guild.id].urls.push(link);
+		return link;
+	}
+
+	URLToMarkdown(label:string, url:string) {
+		return `[${label}](${url})`;
+	}
+
+	getArtistURL(artist:string) {
+		return `https://www.last.fm/music/${this.encodeURL(artist)}`;
+	}
+
+	getArtistURLMarkdown(artist:string) {
+		return this.URLToMarkdown(artist, this.getArtistURL(artist));
+	}
+
+	getAlbumURL(artist:string, album:string) {
+		return `https://www.last.fm/music/${this.encodeURL(artist)}/${this.encodeURL(album)}`;
+	}
+
+	getAlbumURLMarkdown(artist:string, album:string) {
+		return this.URLToMarkdown(album, this.getAlbumURL(artist, album));
+	}
+
+	getTrackURL(artist:string, track:string) {
+		return `https://www.last.fm/music/${this.encodeURL(artist)}/_/${this.encodeURL(track)}`;
+	}
+
+	getTrackURLMarkdown(artist:string, track:string) {
+		return this.URLToMarkdown(track, this.getTrackURL(artist, track));
+	}
+
+	getArtistAlbumMarkdown(artist:string, album:string) {
+		return `by ${this.getArtistURLMarkdown(artist)}${album ? ` from ${this.getAlbumURLMarkdown(artist, album)}` : ""}`;
+	}
+
+	getArtistAlbumMarkdownSetURL(artist:string, album:string, artistURL:string, albumURL:string) {
+		if (artistURL === void 0 || albumURL == void 0) {
+			return this.getArtistAlbumMarkdown(artist, album);
+		}
+		return `by ${this.URLToMarkdown(artist, artistURL) || this.getArtistURL(artist)}${album ? ` from ${this.URLToMarkdown(album, albumURL) || this.getAlbumURL(artist, album)}` : ""}`;
+	}
+
+	getCombinedAlbumMarkdown(artist:string, album:string) {
+		return `[${artist} - ${album}](${this.getAlbumURL(artist, album)})`;
+	}
+
+	getCombinedTrackMarkdown(artist:string, track:string) {
+		return `[${artist} - ${track}](${this.getTrackURL(artist, track)})`;
 	}
 
 }

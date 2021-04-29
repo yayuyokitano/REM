@@ -27,7 +27,8 @@ export default class FMWhoKnowsTrack extends LastFMCommand {
 		const total = trackArray.reduce((acc, cur) => acc + cur[0], 0);
 
 		const embed = this.initEmbed()
-			.setTitle(`Who knows **${track.artist.name}**?`);
+			.setTitle(`Who knows **${track.artist.name}**?`)
+			.setURL(track.url);
 		
 		this.createTableMessage(embed, trackArray, ["scrobble", "scrobbles"], `**${total.toLocaleString("fr")} scrobbles from ${trackArray.length.toLocaleString("fr")} listeners**\n\n`);
 		
