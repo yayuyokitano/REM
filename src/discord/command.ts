@@ -10,6 +10,7 @@ import parseDuration from "parse-duration";
 import CommandHandler from "./commandHandler";
 import config from "../config.json";
 import youtubeSearch from "youtube-search";
+import { number } from "mathjs";
 
 let opts = {
 	maxResults: 1,
@@ -275,7 +276,7 @@ export default class Command {
 		return embed;
 	}
 
-	async sendPaginatedMessage(embed:MessageEmbed, messageArray:(MessageEmbedOptions|string)[], entriesPerPage:number, totalEntries:number) {
+	async sendLegacyPaginatedMessage(embed:MessageEmbed, messageArray:(MessageEmbedOptions|string)[], entriesPerPage:number, totalEntries:number) {
 
 		embed = this.setDescriptionOrFields(embed, messageArray[0]);
 
@@ -321,23 +322,124 @@ export default class Command {
 
 		collector.on("end", () => {
 			reply.reactions.removeAll();
-		})
+		});
 	}
 
 	formatTableNumber(num:number, len:number) {
 		return num.toLocaleString("fr").padStart(len, " ");
 	}
 
+	clamp(min:number, num:number, max:number) {
+		return Math.max(min, Math.min(num, max));
+	}
+
+	setPaginatedEmbedPage(embed:MessageEmbed, pageData:{description:string, page:{start:number, end:number}}[], page:number) {
+		page = this.clamp(0, page, pageData.length - 1);
+		embed.setDescription(pageData[page].description)
+			.setFooter(`Showing ${pageData[page].page.start}-${pageData[page].page.end} of ${pageData.slice(-1)[0].page.end} entries`);
+		return embed;
+	}
+
+	async sendPaginatedMessage(embed:MessageEmbed, tableProcessed:string[], maxPerPage:number, prefix:string) {
+
+		let currPageCount = 0;
+		const maxLength = 2000;
+
+		let pageData:{description:string, page:{start:number, end:number}}[] = [];
+		let prevPage:{description:string, page:{start:number, end:number}} = {
+			description: "",
+			page: {
+				start: 0,
+				end: 0
+			}
+		};
+		let currDesc = prefix;
+
+		for (let entry of tableProcessed) {
+			if ((currDesc.length + entry.length) < maxLength && currPageCount < maxPerPage) {
+				currPageCount++;
+				currDesc += `${entry}\n`;
+			} else {
+				if (currPageCount <= 1) {
+					currPageCount = 0;
+					continue;
+				}
+				prevPage = {
+					description: currDesc,
+					page: {
+						start: prevPage.page.end + 1,
+						end: prevPage.page.end + currPageCount
+					}
+				}
+				pageData.push(prevPage);
+				currPageCount = 0;
+				currDesc = prefix;
+				if ((currDesc.length + entry.length) < maxLength) {
+					currPageCount++;
+					currDesc += `${entry}\n`;
+				}
+			}
+		}
+		pageData.push({
+			description: currDesc,
+			page: {
+				start: prevPage.page.end + 1,
+				end: prevPage.page.end + currPageCount
+			}
+		});
+		
+
+		let page = 0;
+		embed = this.setPaginatedEmbedPage(embed, pageData, page);
+		let reply = await this.reply(embed);
+
+		if (pageData.length === 1 || (pageData.length === 2 && (pageData[1].description === "" || pageData[1].description === prefix))) {
+			embed.setFooter("");
+			return;
+		}
+
+		let reactionArray = ["825611085541408788", "825611085700530216", "825611085772095498", "825611085913784350"];
+
+		for (let emoji of reactionArray) {
+			await reply.react(emoji);
+		}
+		
+		const collector = reply.createReactionCollector((reaction) => reactionArray.includes(reaction.emoji.id), {time: 5 * this.MINUTES});
+
+		collector.on("collect", async (reaction, user) => {
+			switch (reaction.emoji.id) {
+				case "825611085541408788":
+					page = 0;
+					break;
+				case "825611085700530216":
+					page = Math.max(0, page - 1);
+					break;
+				case "825611085772095498":
+					page = Math.min(pageData.length - 1, page + 1);
+					break;
+				case "825611085913784350":
+					page = pageData.length - 1;
+					break;
+			}
+
+			await reaction.users.remove(user);
+
+			embed = this.setPaginatedEmbedPage(embed, pageData, page);
+			reply.edit(embed);
+		});
+
+		collector.on("end", () => {
+			reply.reactions.removeAll();
+		});
+
+
+	}
+
 	createTableMessage(embed:MessageEmbed, tableArray:[number, string][], classifier:[string, string], prefix:string) {
 		tableArray = tableArray.sort((a, b) => b[0] - a[0]);
-		let len = tableArray[0][0].toLocaleString("fr").length;
-		let tableString = tableArray.reduce((acc, curr) => acc + `\`${this.formatTableNumber(curr[0], len)}\` ${classifier[Number(curr[0] !== 1)]} - ${curr[1]}\n`, "") as string;
-
-		let messageArray = tableString.match(/(.*?\n){15}/g)?.map(e => prefix + e.trim());
-		if (messageArray) {
-			messageArray.push(prefix + tableString.slice(messageArray.reduce((acc, cur) => acc + cur.length, 0) - (prefix.length - 1) * messageArray.length));
-		}
-		this.sendPaginatedMessage(embed, messageArray ?? [prefix + tableString.trim()], 15, tableArray.length);
+		const len = tableArray[0][0].toLocaleString("fr").length;
+		const tableProcessed = tableArray.map(e => `\`${this.formatTableNumber(e[0], len)}\` ${classifier[Number(e[0] !== 1)]} - ${e[1]}`);
+		this.sendPaginatedMessage(embed, tableProcessed, 15, prefix);
 	}
 
 	getOrdinalNumber(num:number) {
@@ -419,6 +521,11 @@ export default class Command {
 
 	getCombinedTrackMarkdown(artist:string, track:string) {
 		return `[${artist} - ${track}](${this.getTrackURL(artist, track)})`;
+	}
+
+	fakeAddField(embed:MessageEmbed, name:string, field:string) {
+		embed.description += `**${name}**\n${field}\n\n`;
+		return embed;
 	}
 
 }

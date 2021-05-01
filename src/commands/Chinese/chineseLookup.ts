@@ -55,7 +55,7 @@ export default class CnVocab extends Command {
 		}
 
 		let embed = this.initEmbed();
-		this.sendPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
+		this.sendLegacyPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
 
 	}
 

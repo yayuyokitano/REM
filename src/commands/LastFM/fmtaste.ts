@@ -11,8 +11,8 @@ export default class FMTaste extends LastFMCommand {
 		
 		const lfmUsers = await this.getRelevantLFM();
 
-		const res = await this.lastfm.helper.getMatchingArtists(lfmUsers.session[0], lfmUsers.session[1], 1000, this.convertToLFMTime(this.removeMentions(args))).catch ((err) => {
-			throw `Error getting data from lastfm. Most likely you or a mentioned person is not signed into the bot. Try signing in with \`${this.getPrefix()}login\``;
+		const res = await this.lastfm.helper.getMatchingArtists(lfmUsers.session[0], lfmUsers.session[1], 1000, this.convertToLFMTime(this.removeMentions(args))).catch (async (err) => {
+			throw `Error getting data from lastfm. Most likely you or a mentioned person is not signed into the bot. Try signing in with \`${await this.getPrefix()}login\``;
 		});
 		
 		let user = lfmUsers.safe.slice(0,2);
@@ -42,7 +42,7 @@ export default class FMTaste extends LastFMCommand {
 		let embed = this.initEmbed()
 			.setTitle(`Mutual artists between ${user[0]} and ${user[1]} ${this.convertToLFMTime(this.removeMentions(args))}`);
 
-		this.sendPaginatedMessage(embed, messageArray, 15, scrobbleSort.length);
+		this.sendLegacyPaginatedMessage(embed, messageArray, 15, scrobbleSort.length);
 
 	}
 

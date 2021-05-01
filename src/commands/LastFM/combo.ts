@@ -31,9 +31,9 @@ export default class FMCombo extends LastFMCommand {
 
 	getComboList(res:any) {
 		return [
-			res.artist.combo > 1 ? `Artist: ${res.artist.combo}${res.nowplaying ? "➚" : ""} plays in a row (${res.artist.name})` : "",
-			res.album.combo > 1 ? `Album: ${res.album.combo}${res.nowplaying ? "➚" : ""} plays in a row (${res.album.name})` : "",
-			res.track.combo > 1 ? `Track: ${res.track.combo}${res.nowplaying ? "➚" : ""} plays in a row (${res.track.name})` : "",
+			res.artist.combo > 1 ? `Artist: ${res.artist.combo}${res.nowplaying ? "➚" : ""} plays in a row (${this.getArtistURLMarkdown(res.artist.name)})` : "",
+			res.album.combo > 1 ? `Album: ${res.album.combo}${res.nowplaying ? "➚" : ""} plays in a row (${this.getAlbumURLMarkdown(res.artist.name, res.album.name)})` : "",
+			res.track.combo > 1 ? `Track: ${res.track.combo}${res.nowplaying ? "➚" : ""} plays in a row (${this.getTrackURLMarkdown(res.artist.name, res.track.name)})` : "",
 		].filter((e) => e !== "");
 	}
 

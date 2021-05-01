@@ -65,7 +65,7 @@ export default class FM extends LastFMCommand {
 				.setURL(nowplaying.details.track.data?.url || this.getTrackURL(nowplaying.recent.artist, nowplaying.recent.track))
 				.setThumbnail(nowplaying.recent.image[2]?.url)
 				.setDescription(this.getArtistAlbumMarkdownSetURL(nowplaying.recent.artist, nowplaying.recent.album, nowplaying.details.artist.data?.url, nowplaying.details.album.data?.url))
-				.addField(`${nowplaying.details.recent.data.tracks[0].loved ? "❤️ " : ""}${playcount || `No data found for ${nowplaying.recent.artist}`}${nowplaying.details.recent.data.tracks[0].loved ? " ❤️" : ""}`, [...tags].slice(0,5).join("・") || `No tags found for ${nowplaying.recent.artist}`);
+				.addField(`${nowplaying.details.recent.data.tracks[0].loved === "1" ? "❤️ " : ""}${playcount || `No data found for ${nowplaying.recent.artist}`}${nowplaying.details.recent.data.tracks[0].loved === "1" ? " ❤️" : ""}`, [...tags].slice(0,5).join("・") || `No tags found for ${nowplaying.recent.artist}`);
 			
 			let npMsg = await this.reply(embed);
 

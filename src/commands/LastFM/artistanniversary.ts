@@ -41,10 +41,11 @@ export default class ArtistAnniversary extends LastFMCommand {
 
 			let embed = this.initEmbed();
 			embed.setTitle(`${lastfmSession.safe[0]}'s artist anniversaries`);
+			embed.description = "";
 
 			for (let artist of (res as any[]).slice(0, 5)) {
 				let numYears = Math.round((currTS - Number(artist.firstScrobble)) / 31556952);
-				embed.addField(this.getArtistURLMarkdown(artist.artist), `${lastfmSession.safe[0]} first scrobbled ${artist.artist} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled them ${artist.scrobbleCount} time${artist.scrobbleCount === 1 ? "" : "s"}`);
+				embed = this.fakeAddField(embed, this.getArtistURLMarkdown(artist.artist), `${lastfmSession.safe[0]} first scrobbled ${artist.artist} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled them ${artist.scrobbleCount} time${artist.scrobbleCount === 1 ? "" : "s"}`);
 			}
 
 			this.reply(embed);

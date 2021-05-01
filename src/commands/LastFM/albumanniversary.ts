@@ -52,13 +52,14 @@ export default class AlbumAnniversary extends LastFMCommand {
 			}
 
 			let success = 0;
+			embed.description = "";
 
 			for (let album of (res as any[])) {
 				if (!albumCompare[album.album]?.includes(album.artist)) {
 					continue;
 				}
 				let numYears = Math.round((currTS - Number(album.firstScrobble)) / 31556952);
-				embed.addField(this.getCombinedAlbumMarkdown(album.artist, album.album), `${lastfmSession.safe[0]} first scrobbled ${album.album} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled it ${album.scrobbleCount} time${album.scrobbleCount === 1 ? "" : "s"}`);
+				embed = this.fakeAddField(embed, this.getCombinedAlbumMarkdown(album.artist, album.album), `${lastfmSession.safe[0]} first scrobbled ${album.album} on this date ${numYears} year${numYears === 1 ? "" : "s"} ago\nand has now scrobbled it ${album.scrobbleCount} time${album.scrobbleCount === 1 ? "" : "s"}`);
 				success++;
 				if (success >= 5) {
 					break;

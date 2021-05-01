@@ -14,15 +14,12 @@ export default class LastFMCommand extends Command {
 		super(pool);
 		this.lastfm = new LastFM(config.lastfm.key, { apiSecret:config.lastfm.secret });
 
-		/*("requestStart", (args, method) => {
+		/*this.lastfm.on("requestStart", (args, method) => {
 			console.log("REQUEST START: ", method, args);
 		});
-		this.lastfm.on("requestComplete", (args, time, res) => {
-			console.log("REQUEST COMPLETE: ", args, `Executed in ${time}ms`, res);
-		});
-		this.lastfm.on("requestPrepare", (args) => {
-			console.log("REQUEST PREPARE: ", args);
-		})*/
+		this.lastfm.on("requestComplete", (args, time) => {
+			console.log("REQUEST COMPLETE: ", args, `Executed in ${time}ms`);
+		});*/
 	}
 
 	async getLastfmSession() {
@@ -251,6 +248,7 @@ export default class LastFMCommand extends Command {
 	}
 
 	async playSong() {
+
 		const voiceConnection = this.handler.voiceConnections[this.message.guild.id];
 		const connection = await voiceConnection.connection;
 		voiceConnection.urls = voiceConnection.urls.filter(e => e !== void 0);
@@ -282,17 +280,22 @@ export default class LastFMCommand extends Command {
 			this.message.channel.send(`There was an error playing song from url ${url}, skipping...`);
 		}
 		
-		const dispatcher = connection.play(stream, {type: "opus"});
-		voiceConnection.isPlaying = true;
-		dispatcher.on("finish", async() => {
-			const lastfmsessions = (await this.pool.execute(`SELECT lastfmsession FROM users WHERE discordid IN (?${",?".repeat(connection.channel.members.size - 1)})`, connection.channel.members.keyArray()))[0] as {lastfmsession:string}[];
-			for (let session of lastfmsessions) {
-				if (session.lastfmsession) {
-					this.lastfm.track.scrobble(session.lastfmsession, [{artist, track, album, timestamp:Math.floor(Date.now() / 1000)}]);
+		try {
+			const dispatcher = connection.play(stream, {type: "opus"});
+			voiceConnection.isPlaying = true;
+			dispatcher.on("finish", async() => {
+				const lastfmsessions = (await this.pool.execute(`SELECT lastfmsession FROM users WHERE discordid IN (?${",?".repeat(connection.channel.members.size - 1)})`, connection.channel.members.keyArray()))[0] as {lastfmsession:string}[];
+				for (let session of lastfmsessions) {
+					if (session.lastfmsession) {
+						this.lastfm.track.scrobble(session.lastfmsession, [{artist, track, album, timestamp:Math.floor(Date.now() / 1000)}]);
+					}
 				}
-			}
-			this.playSong();
-		});
+				this.playSong();
+			});
+		} catch(err) {
+			console.log(err);
+		}
+		
 		let info = (await ytdl.getBasicInfo(url)).videoDetails;
 		let {artist, album, track} = await new YoutubeParser(info, this.pool).getTags();
 		let embed = this.initEmbed(`Now Playing - 🔊${connection.channel.name}`)

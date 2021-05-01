@@ -42,7 +42,7 @@ export default class JpVocab extends Command {
 			});
 		}
 		
-		this.sendPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
+		this.sendLegacyPaginatedMessage(embed, definitionFields, 1, definitionFields.length);
 		
 	}
 
