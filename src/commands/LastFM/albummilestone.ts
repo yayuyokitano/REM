@@ -30,7 +30,7 @@ export default class AlbumMilestone extends LastFMCommand {
 
 			embed.setTitle(`${album.artist} - ${album.album}`)
 				.setURL(this.getAlbumURL(album.artist, album.album))
-				.setDescription(`${lastfmSafe} has now scrobbled **${album.album}** ${album.scrobbleCount} time${album.scrobbleCount > 1 ? "s" : ""}`)
+				.setDescription(`${this.sanitizeMarkdown(lastfmSafe)} has now scrobbled **${this.sanitizeMarkdown(album.album)}** ${album.scrobbleCount} time${album.scrobbleCount > 1 ? "s" : ""}`)
 				.setFooter(`First scrobbled on ${this.getLocalizedTime(new Date(Number(album.firstScrobbled) * 1000), await this.getTimezone())}`);
 			
 			await this.reply(embed);

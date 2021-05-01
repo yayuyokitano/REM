@@ -29,7 +29,7 @@ export default class Scrobbles extends LastFMCommand {
 			throw `There was an error connecting to Last.FM. User may not have connected their Last.FM account, which can be done by doing \`${await this.getPrefix()}login\``
 		}
 
-		this.reply(`${recenttracks.meta.user} has ${Number(recenttracks.meta.total).toLocaleString("fr")} scrobbles${duration[0] !== 0 ? ` in the last ${duration[1]}`:""}.`);
+		this.reply(`${this.sanitizeMarkdown(recenttracks.meta.user)} has ${Number(recenttracks.meta.total).toLocaleString("fr")} scrobbles${duration[0] !== 0 ? ` in the last ${duration[1]}`:""}.`);
 
 	}
 

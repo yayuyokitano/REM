@@ -49,10 +49,10 @@ export default class TrackInfo extends LastFMCommand {
 			let embed = this.initEmbed()
 				.setTitle(track.name)
 				.setURL(track.url)
-				.setDescription(artist + album)
+				.setDescription(this.getArtistAlbumMarkdownSetURL(track.artist.name, track.album.title, track.artist.url, track.album.url))
 				.addField("Last.FM Stats", `Listeners: ${track.listeners}\nScrobbles: ${track.playcount}`, true)
 				.addField("REM Stats", `Listeners: ${(scrobbles as any[]).length}\nScrobbles: ${(scrobbles as any[]).reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
-				.addField(`${this.message.guild.name} Stats`, `Listeners: ${scrobbleFiltered.length}\nScrobbles: ${scrobbleFiltered.reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
+				.addField(`${this.sanitizeMarkdown(this.message.guild.name)} Stats`, `Listeners: ${scrobbleFiltered.length}\nScrobbles: ${scrobbleFiltered.reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
 				.addField("Your stats",
 									(firstScrobbleTime !== undefined ? `${lastfmSession.safe[0]} first scrobbled this track on ${this.getLocalizedTime(new Date(Number(firstScrobbleTime) * 1000), await this.getTimezone())}` : `${lastfmSession.safe[0]} has not scrobbled this track yet`)
 									+ "\n" +

@@ -31,7 +31,7 @@ export default class TrackCombos extends LastFMCommand {
 
 		const ret = res.map(e => [e.combo, `**${this.getTrackURLMarkdown(e.artist, e.track)}** by ${this.getArtistURLMarkdown(e.artist)}`]) as [number, string][];
 		let embed = this.initEmbed();
-		embed.setTitle(`${safe[0]}'s top track combos`);
+		embed.setTitle(`${this.sanitizeMarkdown(safe[0])}'s top track combos`);
 
 		this.createTableMessage(embed, ret, ["play", "plays"], "");
 

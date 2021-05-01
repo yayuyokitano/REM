@@ -17,7 +17,7 @@ export default class ArtistPlays extends LastFMCommand {
 		}
 
 		try {
-			this.reply(`${lastfmSession.safe[0]} has ${Number(artist.stats.userplaycount).toLocaleString("fr")} scrobbles of ${artist.name}`);
+			this.reply(`${this.sanitizeMarkdown(lastfmSession.safe[0])} has ${Number(artist.stats.userplaycount).toLocaleString("fr")} scrobbles of ${this.sanitizeMarkdown(artist.name)}`);
 
 		} catch(err) {
 			throw `There was an error connecting to Last.FM. User may not have connected their Last.FM account, which can be done by doing \`${await this.getPrefix()}login\``

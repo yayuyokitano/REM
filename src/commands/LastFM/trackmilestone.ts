@@ -30,7 +30,7 @@ export default class TrackMilestone extends LastFMCommand {
 
 			embed.setTitle(`${track.artist} - ${track.track}`)
 				.setURL(this.getTrackURL(track.artist, track.track))
-				.setDescription(`${lastfmSafe} has now scrobbled **${track.track}** ${track.scrobbleCount} time${track.scrobbleCount > 1 ? "s" : ""}`)
+				.setDescription(`${this.sanitizeMarkdown(lastfmSafe)} has now scrobbled **${this.sanitizeMarkdown(track.track)}** ${track.scrobbleCount} time${track.scrobbleCount > 1 ? "s" : ""}`)
 				.setFooter(`First scrobbled on ${this.getLocalizedTime(new Date(Number(track.firstScrobbled) * 1000), await this.getTimezone())}`);
 			
 			await this.reply(embed);

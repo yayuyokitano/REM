@@ -34,8 +34,8 @@ export default class FMTaste extends LastFMCommand {
 		for (let scrobbles of scrobbleSplit) {
 			let current = "";
 			let len = [Math.max(user[0].length, 5), Math.max(user[1].length, 5)]
-			current += `${scrobbleSort.length} mutual artists\n\`\`\`\n${user[0].padStart(5, " ")} │ ${user[1].padEnd(5, " ")} │ Artist\n${"─".repeat(len[0])}─┼─${"─".repeat(len[1])}─┼─${"─".repeat(maxLength)}\n`;
-			current += scrobbles.reduce((acc, cur) => acc + `${cur.playcount[0].toString().padStart(len[0], " ")} │ ${cur.playcount[1].toString().padEnd(len[1], " ")} │ ${cur.name.slice(0,maxLength)}\n`, "");
+			current += `${scrobbleSort.length} mutual artists\n\`\`\`\n${this.sanitizeMarkdown(user[0].padStart(5, " "))} │ ${this.sanitizeMarkdown(user[1].padEnd(5, " "))} │ Artist\n${"─".repeat(len[0])}─┼─${"─".repeat(len[1])}─┼─${"─".repeat(maxLength)}\n`;
+			current += scrobbles.reduce((acc, cur) => acc + `${cur.playcount[0].toString().padStart(len[0], " ")} │ ${cur.playcount[1].toString().padEnd(len[1], " ")} │ ${this.sanitizeMarkdown(cur.name.slice(0,maxLength))}\n`, "");
 			messageArray.push(current.trim() + "\n```");
 		}
 

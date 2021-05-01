@@ -31,7 +31,7 @@ export default class AlbumCombos extends LastFMCommand {
 
 		const ret = res.map(e => [e.combo, `**${this.getAlbumURLMarkdown(e.artist, e.album)}** by ${this.getArtistURLMarkdown(e.artist)}`]) as [number, string][];
 		let embed = this.initEmbed();
-		embed.setTitle(`${safe[0]}'s top album combos`);
+		embed.setTitle(`${this.sanitizeMarkdown(safe[0])}'s top album combos`);
 
 		this.createTableMessage(embed, ret, ["play", "plays"], "");
 

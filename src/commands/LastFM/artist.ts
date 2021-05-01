@@ -47,16 +47,16 @@ export default class ArtistInfo extends LastFMCommand {
 			let embed = this.initEmbed()
 				.setTitle(artist.name)
 				.setURL(artist.url)
-				.setDescription(artist.bio.summary.split("<a href")[0])
+				.setDescription(this.sanitizeMarkdown(artist.bio.summary.split("<a href")[0]))
 				.addField("Last.FM Stats", `Listeners: ${artist.stats.listeners}\nScrobbles: ${artist.stats.playcount}`, true)
 				.addField("REM Stats", `Listeners: ${(scrobbles as any[]).length}\nScrobbles: ${(scrobbles as any[]).reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
-				.addField(`${this.message.guild.name} Stats`, `Listeners: ${scrobbleFiltered.length}\nScrobbles: ${scrobbleFiltered.reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
+				.addField(`${this.sanitizeMarkdown(this.message.guild.name)} Stats`, `Listeners: ${scrobbleFiltered.length}\nScrobbles: ${scrobbleFiltered.reduce((acc, cur) => acc + cur.scrobbleCount, 0)}`, true)
 				.addField("Your stats",
-									(firstScrobbleTime !== undefined ? `${lastfmSession.safe[0]} first scrobbled this artist on ${this.getLocalizedTime(new Date(Number(firstScrobbleTime) * 1000), await this.getTimezone())}` : `${lastfmSession.safe[0]} has not scrobbled this track yet`)
+									(firstScrobbleTime !== undefined ? `${this.sanitizeMarkdown(lastfmSession.safe[0])} first scrobbled this artist on ${this.getLocalizedTime(new Date(Number(firstScrobbleTime) * 1000), await this.getTimezone())}` : `${this.sanitizeMarkdown(lastfmSession.safe[0])} has not scrobbled this track yet`)
 									+ "\n" +
 									`${Number(artist.stats.userplaycount).toLocaleString("fr")} scrobbles by you (${(Number(artist.stats.userplaycount) * 100 / Number(recent.meta.total)).toFixed(2)}% of your total scrobbles)`
 									+ "\n" +
-									`You make up ${(Number(artist.stats.userplaycount) * 100 / Number(artist.stats.playcount)).toFixed(2)}% of the global scrobbles of **${artist.name}**`);
+									`You make up ${(Number(artist.stats.userplaycount) * 100 / Number(artist.stats.playcount)).toFixed(2)}% of the global scrobbles of **${this.sanitizeMarkdown(artist.name)}**`);
 
 			this.reply(embed);
 			

@@ -31,7 +31,7 @@ export default class ArtistCombos extends LastFMCommand {
 
 		const ret = res.map(e => [e.combo, this.getArtistURLMarkdown(e.artist)]) as [number, string][];
 		let embed = this.initEmbed();
-		embed.setTitle(`${safe[0]}'s top artist combos`);
+		embed.setTitle(`safe[0]}'s top artist combos`);
 
 		this.createTableMessage(embed, ret, ["play", "plays"], "");
 
