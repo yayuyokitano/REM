@@ -481,7 +481,7 @@ export default class Command {
 	}
 
 	URLToMarkdown(label:string, url:string) {
-		return this.sanitizeMarkdown(`[${label}](${url})`);
+		return this.sanitizeMarkdown(`[${this.sanitizeMarkdown(label)}](${url})`);
 	}
 
 	getArtistURL(artist:string) {
@@ -489,7 +489,7 @@ export default class Command {
 	}
 
 	getArtistURLMarkdown(artist:string) {
-		return this.sanitizeMarkdown(this.URLToMarkdown(artist, this.getArtistURL(artist)));
+		return this.URLToMarkdown(artist, this.getArtistURL(artist));
 	}
 
 	getAlbumURL(artist:string, album:string) {
@@ -497,7 +497,7 @@ export default class Command {
 	}
 
 	getAlbumURLMarkdown(artist:string, album:string) {
-		return this.sanitizeMarkdown(this.URLToMarkdown(album, this.getAlbumURL(artist, album)));
+		return this.URLToMarkdown(album, this.getAlbumURL(artist, album));
 	}
 
 	getTrackURL(artist:string, track:string) {
@@ -505,26 +505,26 @@ export default class Command {
 	}
 
 	getTrackURLMarkdown(artist:string, track:string) {
-		return this.sanitizeMarkdown(this.URLToMarkdown(track, this.getTrackURL(artist, track)));
+		return this.URLToMarkdown(track, this.getTrackURL(artist, track));
 	}
 
 	getArtistAlbumMarkdown(artist:string, album:string) {
-		return this.sanitizeMarkdown(`by ${this.getArtistURLMarkdown(artist)}${album ? ` from ${this.getAlbumURLMarkdown(artist, album)}` : ""}`);
+		return `by ${this.getArtistURLMarkdown(artist)}${album ? ` from ${this.getAlbumURLMarkdown(artist, album)}` : ""}`;
 	}
 
 	getArtistAlbumMarkdownSetURL(artist:string, album:string, artistURL:string, albumURL:string) {
 		if (artistURL === void 0 || albumURL == void 0) {
 			return this.getArtistAlbumMarkdown(artist, album);
 		}
-		return this.sanitizeMarkdown(`by ${this.URLToMarkdown(artist, artistURL) || this.getArtistURL(artist)}${album ? ` from ${this.URLToMarkdown(album, albumURL) || this.getAlbumURL(artist, album)}` : ""}`);
+		return `by ${this.URLToMarkdown(artist, artistURL) || this.getArtistURL(artist)}${album ? ` from ${this.URLToMarkdown(album, albumURL) || this.getAlbumURL(artist, album)}` : ""}`;
 	}
 
 	getCombinedAlbumMarkdown(artist:string, album:string) {
-		return this.sanitizeMarkdown(`[${artist} - ${album}](${this.getAlbumURL(artist, album)})`);
+		return `[${artist} - ${album}](${this.getAlbumURL(artist, album)})`;
 	}
 
 	getCombinedTrackMarkdown(artist:string, track:string) {
-		return this.sanitizeMarkdown(`[${artist} - ${track}](${this.getTrackURL(artist, track)})`);
+		return `[${artist} - ${track}](${this.getTrackURL(artist, track)})`;
 	}
 
 	fakeAddField(embed:MessageEmbed, name:string, field:string) {
