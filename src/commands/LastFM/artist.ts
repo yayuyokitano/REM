@@ -14,11 +14,12 @@ export default class ArtistInfo extends LastFMCommand {
 	async run(args:string) {
 
 		let lastfmSession = await this.getRelevantLFM();
-		let {artist, recent} = await this.getRelevantArtistDetailed(args, lastfmSession.session[0]);
 
 		if (typeof lastfmSession === "undefined") {
 			throw `User is not logged in to last.fm. You can login using \`${await this.getPrefix()}login\``
 		}
+
+		let {artist, recent} = await this.getRelevantArtistDetailed(args, lastfmSession.session[0]);
 
 		try {
 

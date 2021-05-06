@@ -14,11 +14,12 @@ export default class TrackInfo extends LastFMCommand {
 	async run(args:string) {
 
 		let lastfmSession = await this.getRelevantLFM();
-		let {track, recent} = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
 
 		if (typeof lastfmSession === "undefined") {
 			throw `User is not logged in to last.fm. You can login using \`${await this.getPrefix()}login\``
 		}
+
+		let {track, recent} = await this.getRelevantTrackDetailed(args, lastfmSession.session[0]);
 
 		try {
 

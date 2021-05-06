@@ -435,8 +435,12 @@ export default class Command {
 
 	}
 
-	createTableMessage(embed:MessageEmbed, tableArray:[number, string][], classifier:[string, string], prefix:string) {
-		tableArray = tableArray.sort((a, b) => b[0] - a[0]);
+	createTableMessage(embed:MessageEmbed, tableArray:[number, string][], classifier:[string, string], prefix:string, options:{
+		ascending:boolean;
+	} = {
+		ascending: false
+	}) {
+		tableArray = tableArray.sort((a, b) => options.ascending ? a[0] - b[0] : b[0] - a[0]);
 		const len = tableArray[0][0].toLocaleString("fr").length;
 		const tableProcessed = tableArray.map(e => `\`${this.formatTableNumber(e[0], len)}\` ${classifier[Number(e[0] !== 1)]} - ${e[1]}`);
 		this.sendPaginatedMessage(embed, tableProcessed, 15, prefix);
