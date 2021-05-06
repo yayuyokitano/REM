@@ -120,6 +120,11 @@ export default class LastFMCommand extends Command {
 
 	}
 
+	async fetchArtist(args:string) {
+		const artist = (await this.lastfm.artist.getCorrection(args)).artist?.name;
+		return (artist ?? (await this.lastfm.artist.search(args)).artistMatches[0].name);
+	}
+
 	async getRelevantArtist(args:string) {
 
 		args = this.removeMentions(args).trim();
@@ -127,8 +132,7 @@ export default class LastFMCommand extends Command {
 
 		if (args.length) {
 			
-			const search = (await this.lastfm.artist.search(args)).artistMatches[0];
-			artist = search.name;
+			artist = await this.fetchArtist(args);
 
 		} else {
 
@@ -151,8 +155,7 @@ export default class LastFMCommand extends Command {
 
 		if (args.length) {
 			
-			const search = (await this.lastfm.artist.search(args)).artistMatches[0];
-			let artist = search.name;
+			const artist = await this.fetchArtist(args);
 			const res = await this.lastfm.artist.getInfo({artist}, {sk});
 			return {artist: res, recent: null};
 
