@@ -72,6 +72,11 @@
   resolved "https://registry.yarnpkg.com/@types/he/-/he-1.1.1.tgz#19e14033c4ee8f1a702c74dcc6182664839ac2b7"
   integrity sha512-jpzrsR1ns0n3kyWt92QfOUQhIuJGQ9+QGa7M62rO6toe98woQjnsnzjdMtsQXCdvjjmqjS2ZBCC7xKw0cdzU+Q==
 
+"@types/is-number@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/@types/is-number/-/is-number-7.0.1.tgz#67ae3b4d95e72d5585e08abfed8390e7543661ca"
+  integrity sha512-X8x3GugC4+84FEukgkKT75SkSVdzdeZJzy5k7n5CRB7/jk0PgeYwe2O5qRx7qOTnKkLNMVOP2d190R7VWzbzEw==
+
 "@types/mathjs@^6.0.11":
   version "6.0.11"
   resolved "https://registry.yarnpkg.com/@types/mathjs/-/mathjs-6.0.11.tgz#bf24c1ed875252274008d2c373bad07e0348adfb"
@@ -546,6 +551,11 @@ is-fullwidth-code-point@^2.0.0:
   resolved "https://registry.yarnpkg.com/is-fullwidth-code-point/-/is-fullwidth-code-point-2.0.0.tgz#a3b30a5c4f199183167aaab93beefae3ddfb654f"
   integrity sha1-o7MKXE8ZkYMWeqq5O+764937ZU8=
 
+is-number@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/is-number/-/is-number-7.0.0.tgz#7535345b896734d5f80c4d06c50955527a14f12b"
+  integrity sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==
+
 is-property@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/is-property/-/is-property-1.0.2.tgz#57fe1c4e48474edd65b09911f26b1cd4095dda84"
@@ -566,10 +576,10 @@ lastfm-tag-processor@^1.0.0:
   resolved "https://registry.yarnpkg.com/lastfm-tag-processor/-/lastfm-tag-processor-1.0.0.tgz#c0e5fbcf43aa7eb4029ff73ca24612568218a6f9"
   integrity sha512-rLtakx9urzyoMLkBbovRS5M70JO8ufNvc1yps+tjK4SZ1afo1UiMpyzG5untPP/P10QT2v/jCx5omJGsVRMypA==
 
-lastfm-typed@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/lastfm-typed/-/lastfm-typed-1.3.1.tgz#1a579712f0f03c36a533b45c1c9926ec98a89eeb"
-  integrity sha512-0/BJVtU7WEdk9l7SYCzUm4ORNfyC1j7e4oHz40UBr5ERo2X5Fb+wWi1vjbpl31nnmVet/31549MBE8RFs1lcLA==
+lastfm-typed@^1.3.3:
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/lastfm-typed/-/lastfm-typed-1.3.3.tgz#b855d7d51b8ed8198d298797a29b4271ad9726b5"
+  integrity sha512-ZQc4vAYTG+9fNXqmeAfHEH0lc6ZXlHBlEsC3HUyPDq0RXIfX7mtUbdqYE1NQQMselFjnapHGfdIRC0FdHMVWkA==
   dependencies:
     node-fetch "^2.6.1"
     typed-emitter "^1.3.1"
